@@ -28,13 +28,18 @@ public class FCMHelper {
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful() && task.getResult() != null) {
                         String token = task.getResult();
-                        Log.d(TAG, "FCM Token: " + token);
 
+                        // Log token in a clearly visible format for testing
+                        Log.d(TAG, "========================================");
+                        Log.d(TAG, "FCM TOKEN FOR TESTING:");
+                        Log.d(TAG, token);
+                        Log.d(TAG, "========================================");
+                        Log.d(TAG, "Copy this token to test notifications in Firebase Console");
                         // Save token to Firestore
                         UserManager.getInstance()
                                 .updateField(userId, "fcmToken", token)
                                 .addOnSuccessListener(aVoid -> {
-                                    Log.d(TAG, "FCM token saved successfully");
+                                    Log.d(TAG, "FCM token saved successfully to Firestore");
                                 })
                                 .addOnFailureListener(e -> {
                                     Log.e(TAG, "Failed to save FCM token: " + e.getMessage());

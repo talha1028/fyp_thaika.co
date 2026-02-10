@@ -25,6 +25,8 @@ public class BidAdapter extends RecyclerView.Adapter<BidAdapter.BidViewHolder> {
     private Context context;
     private List<Bid> bidList;
     private OnBidActionListener listener;
+    private String currentUserId;
+    private String jobClientId;
 
     public interface OnBidActionListener {
         void onAcceptBid(Bid bid);
@@ -33,9 +35,11 @@ public class BidAdapter extends RecyclerView.Adapter<BidAdapter.BidViewHolder> {
         void onContactContractor(Bid bid);
     }
 
-    public BidAdapter(Context context, List<Bid> bidList, OnBidActionListener listener) {
+    public BidAdapter(Context context, List<Bid> bidList, String currentUserId, String jobClientId, OnBidActionListener listener) {
         this.context = context;
         this.bidList = bidList;
+        this.currentUserId = currentUserId;
+        this.jobClientId = jobClientId;
         this.listener = listener;
     }
 
@@ -89,12 +93,17 @@ public class BidAdapter extends RecyclerView.Adapter<BidAdapter.BidViewHolder> {
         holder.tvBidStatus.setText(bid.getStatus().toUpperCase());
         setBidStatusColor(holder.tvBidStatus, bid.getStatus());
 
-        // Show/hide action buttons based on status
-        if ("pending".equals(bid.getStatus())) {
+        // Show/hide action buttons based on status AND if current user is job owner
+        boolean isJobOwner = currentUserId != null && currentUserId.equals(jobClientId);
+        boolean isPending = "pending".equals(bid.getStatus());
+
+        if (isJobOwner && isPending) {
+            // Only job owner can accept/reject pending bids
             holder.btnAccept.setVisibility(View.VISIBLE);
             holder.btnReject.setVisibility(View.VISIBLE);
             holder.tvBidStatus.setVisibility(View.GONE);
         } else {
+            // Hide accept/reject buttons for contractors or non-pending bids
             holder.btnAccept.setVisibility(View.GONE);
             holder.btnReject.setVisibility(View.GONE);
             holder.tvBidStatus.setVisibility(View.VISIBLE);

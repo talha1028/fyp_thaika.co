@@ -103,7 +103,9 @@ public class JobDetailActivity extends AppCompatActivity {
 
     private void setupRecyclerView() {
         bidList = new ArrayList<>();
-        bidAdapter = new BidAdapter(this, bidList, new BidAdapter.OnBidActionListener() {
+
+        // Create adapter with empty jobClientId initially (will be updated when job loads)
+        bidAdapter = new BidAdapter(this, bidList, currentUserId, "", new BidAdapter.OnBidActionListener() {
             @Override
             public void onAcceptBid(Bid bid) {
                 showAcceptBidDialog(bid);
@@ -129,6 +131,32 @@ public class JobDetailActivity extends AppCompatActivity {
         rvBids.setAdapter(bidAdapter);
     }
 
+    private void updateAdapterWithJobOwner(String jobClientId) {
+        // Recreate adapter with correct jobClientId
+        bidAdapter = new BidAdapter(this, bidList, currentUserId, jobClientId, new BidAdapter.OnBidActionListener() {
+            @Override
+            public void onAcceptBid(Bid bid) {
+                showAcceptBidDialog(bid);
+            }
+
+            @Override
+            public void onRejectBid(Bid bid) {
+                showRejectBidDialog(bid);
+            }
+
+            @Override
+            public void onViewProfile(Bid bid) {
+                viewContractorProfile(bid.getContractorId());
+            }
+
+            @Override
+            public void onContactContractor(Bid bid) {
+                contactContractor(bid.getContractorId());
+            }
+        });
+        rvBids.setAdapter(bidAdapter);
+    }
+
     private void setupClickListeners() {
         btnEdit.setOnClickListener(v -> editJob());
         btnShare.setOnClickListener(v -> shareJob());
@@ -151,6 +179,8 @@ public class JobDetailActivity extends AppCompatActivity {
                         currentJob = documentSnapshot.toObject(Job.class);
                         if (currentJob != null) {
                             displayJobDetails(currentJob);
+                            // Update adapter with job owner ID so only owner can accept/reject bids
+                            updateAdapterWithJobOwner(currentJob.getClientId());
                         }
                     } else {
                         Toast.makeText(this, "Job not found", Toast.LENGTH_SHORT).show();

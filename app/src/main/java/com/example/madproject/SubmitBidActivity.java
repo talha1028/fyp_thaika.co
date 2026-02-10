@@ -80,7 +80,17 @@ public class SubmitBidActivity extends AppCompatActivity {
                 .addOnSuccessListener(documentSnapshot -> {
                     if (documentSnapshot.exists()) {
                         job = documentSnapshot.toObject(Job.class);
-                        // Display job info in header if UI elements exist
+
+                        // Check if job is still open for bids
+                        if (job != null && !"open".equals(job.getStatus())) {
+                            Toast.makeText(this, "This job is no longer accepting bids",
+                                    Toast.LENGTH_SHORT).show();
+                            finish();
+                            return;
+                        }
+                    } else {
+                        Toast.makeText(this, "Job not found", Toast.LENGTH_SHORT).show();
+                        finish();
                     }
                 })
                 .addOnFailureListener(e -> {
@@ -105,25 +115,54 @@ public class SubmitBidActivity extends AppCompatActivity {
             return;
         }
 
-        // Check if already bid on this job
         showLoading(true);
 
-        BidManager.getInstance()
-                .checkExistingBid(jobId, currentUserId)
-                .addOnSuccessListener(querySnapshot -> {
-                    if (!querySnapshot.isEmpty()) {
+        // Re-check job status before submitting (in case it changed while user was filling form)
+        JobManager.getInstance()
+                .getJob(jobId)
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (!documentSnapshot.exists()) {
                         showLoading(false);
-                        Toast.makeText(this, "You already submitted a bid for this job",
-                                Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Job no longer exists", Toast.LENGTH_SHORT).show();
+                        finish();
                         return;
                     }
 
-                    // Create bid
-                    createBid(amount, days, proposal);
+                    Job currentJob = documentSnapshot.toObject(Job.class);
+                    if (currentJob == null || !"open".equals(currentJob.getStatus())) {
+                        showLoading(false);
+                        Toast.makeText(this, "This job is no longer accepting bids",
+                                Toast.LENGTH_SHORT).show();
+                        finish();
+                        return;
+                    }
+
+                    // Update job reference
+                    job = currentJob;
+
+                    // Check if already bid on this job
+                    BidManager.getInstance()
+                            .checkExistingBid(jobId, currentUserId)
+                            .addOnSuccessListener(querySnapshot -> {
+                                if (!querySnapshot.isEmpty()) {
+                                    showLoading(false);
+                                    Toast.makeText(this, "You already submitted a bid for this job",
+                                            Toast.LENGTH_SHORT).show();
+                                    return;
+                                }
+
+                                // Create bid
+                                createBid(amount, days, proposal);
+                            })
+                            .addOnFailureListener(e -> {
+                                showLoading(false);
+                                Toast.makeText(this, "Error checking existing bid: " + e.getMessage(),
+                                        Toast.LENGTH_SHORT).show();
+                            });
                 })
                 .addOnFailureListener(e -> {
                     showLoading(false);
-                    Toast.makeText(this, "Error checking existing bid: " + e.getMessage(),
+                    Toast.makeText(this, "Error verifying job status: " + e.getMessage(),
                             Toast.LENGTH_SHORT).show();
                 });
     }

@@ -24,7 +24,7 @@ public class GeminiAIHelper {
     private static final String TAG = "GeminiAI";
 
     // ⚠️ IMPORTANT: Replace with your actual Gemini API key
-    private static final String API_KEY = "AIzaSyCP14QE15TFDIbOgKPX23sPN8qlOnvIORY";
+    private static final String API_KEY = "***REMOVED_SECRET***";
 
     private GenerativeModelFutures model;
     private Executor executor;
@@ -36,7 +36,7 @@ public class GeminiAIHelper {
 
         // ✅ FIXED: Using "gemini-pro" - most stable model
         GenerativeModel gm = new GenerativeModel(
-                "gemini-pro",  // ← Changed from "gemini-1.5-flash"
+                "gemini-1.5-flash",  // ← Changed from "gemini-1.5-flash"
                 API_KEY
         );
 

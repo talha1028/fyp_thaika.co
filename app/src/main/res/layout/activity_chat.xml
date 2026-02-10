@@ -38,7 +38,7 @@
                 android:layout_marginStart="12dp">
 
                 <TextView
-                    android:id="@+id/tvContactName"
+                    android:id="@+id/tvReceiverName"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Ahmad Ali"
@@ -187,5 +187,16 @@
                 android:background="?attr/selectableItemBackgroundBorderless" />
         </LinearLayout>
     </androidx.cardview.widget.CardView>
+
+    <!-- Loading Indicator -->
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -37,19 +37,17 @@ public class ReviewManager {
                 .get();
     }
 
-    // READ - Get reviews for contractor
+    // READ - Get reviews for contractor (sort in memory to avoid index requirement)
     public Task<QuerySnapshot> getReviewsByContractor(String contractorId) {
         return db.collection(COLLECTION_NAME)
                 .whereEqualTo("contractorId", contractorId)
-                .orderBy("reviewDate", Query.Direction.DESCENDING)
                 .get();
     }
 
-    // READ - Get reviews by client
+    // READ - Get reviews by client (sort in memory to avoid index requirement)
     public Task<QuerySnapshot> getReviewsByClient(String clientId) {
         return db.collection(COLLECTION_NAME)
                 .whereEqualTo("clientId", clientId)
-                .orderBy("reviewDate", Query.Direction.DESCENDING)
                 .get();
     }
 
@@ -60,21 +58,19 @@ public class ReviewManager {
                 .get();
     }
 
-    // READ - Get reviews by rating
+    // READ - Get reviews by rating (sort in memory to avoid index requirement)
     public Task<QuerySnapshot> getReviewsByRating(String contractorId, float minRating) {
         return db.collection(COLLECTION_NAME)
                 .whereEqualTo("contractorId", contractorId)
                 .whereGreaterThanOrEqualTo("rating", minRating)
-                .orderBy("rating", Query.Direction.DESCENDING)
                 .get();
     }
 
-    // READ - Get verified reviews only
+    // READ - Get verified reviews only (sort in memory to avoid index requirement)
     public Task<QuerySnapshot> getVerifiedReviews(String contractorId) {
         return db.collection(COLLECTION_NAME)
                 .whereEqualTo("contractorId", contractorId)
                 .whereEqualTo("isVerified", true)
-                .orderBy("reviewDate", Query.Direction.DESCENDING)
                 .get();
     }
 

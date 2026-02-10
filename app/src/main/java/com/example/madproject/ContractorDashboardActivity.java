@@ -166,7 +166,8 @@ public class ContractorDashboardActivity extends AppCompatActivity {
                 startActivity(new Intent(ContractorDashboardActivity.this, MyProjectsActivity.class));
                 return true;
             } else if (id == R.id.nav_messages) {
-                startActivity(new Intent(ContractorDashboardActivity.this, ChatActivity.class));
+                // TODO: Create ConversationsListActivity to show all chats
+                Toast.makeText(this, "Access messages from contractor profiles or job details", Toast.LENGTH_LONG).show();
                 return true;
             } else if (id == R.id.nav_profile) {
                 startActivity(new Intent(ContractorDashboardActivity.this, SettingsActivity.class));

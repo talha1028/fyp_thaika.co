@@ -37,29 +37,26 @@ public class MessageManager {
                 .get();
     }
 
-    // READ - Get messages in a chat
+    // READ - Get messages in a chat (sort in memory to avoid index requirement)
     public Task<QuerySnapshot> getMessagesByChat(String chatId) {
         return db.collection(COLLECTION_NAME)
                 .whereEqualTo("chatId", chatId)
-                .orderBy("timestamp", Query.Direction.ASCENDING)
                 .get();
     }
 
-    // READ - Get messages in a chat with limit
+    // READ - Get messages in a chat with limit (sort in memory to avoid index requirement)
     public Task<QuerySnapshot> getRecentMessages(String chatId, int limit) {
         return db.collection(COLLECTION_NAME)
                 .whereEqualTo("chatId", chatId)
-                .orderBy("timestamp", Query.Direction.DESCENDING)
                 .limit(limit)
                 .get();
     }
 
-    // READ - Get unread messages for user
+    // READ - Get unread messages for user (sort in memory to avoid index requirement)
     public Task<QuerySnapshot> getUnreadMessages(String userId) {
         return db.collection(COLLECTION_NAME)
                 .whereEqualTo("receiverId", userId)
                 .whereEqualTo("isRead", false)
-                .orderBy("timestamp", Query.Direction.DESCENDING)
                 .get();
     }
 
@@ -117,11 +114,10 @@ public class MessageManager {
                 });
     }
 
-    // REAL-TIME - Listen to messages in chat
+    // REAL-TIME - Listen to messages in chat (sort in memory to avoid index requirement)
     public void listenToMessages(String chatId, OnMessagesChangedListener listener) {
         db.collection(COLLECTION_NAME)
                 .whereEqualTo("chatId", chatId)
-                .orderBy("timestamp", Query.Direction.ASCENDING)
                 .addSnapshotListener((value, error) -> {
                     if (error != null) {
                         listener.onError(error.getMessage());

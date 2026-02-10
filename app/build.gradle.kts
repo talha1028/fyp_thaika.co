@@ -53,4 +53,10 @@ dependencies {
     implementation("com.google.guava:guava:31.1-android")
     implementation("org.reactivestreams:reactive-streams:1.0.4")
 
+    // OkHttp for Gemini API calls
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
+    // Gson for JSON parsing
+    implementation("com.google.code.gson:gson:2.10.1")
+
 }
