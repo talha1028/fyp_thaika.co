@@ -26,6 +26,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "GEMINI_API_KEY", "\"${localProperties["GEMINI_API_KEY"] ?: ""}\"")
+        manifestPlaceholders["MAPS_API_KEY"] = localProperties["MAPS_API_KEY"] as? String ?: ""
     }
 
     buildFeatures {

@@ -200,7 +200,7 @@
         <!-- Google Maps API Key (Optional - Add your key) -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="***REMOVED_SECRET***" />
+            android:value="${MAPS_API_KEY}" />
 
         <!-- Firebase Cloud Messaging Service -->
         <service
