@@ -73,9 +73,26 @@ public class AIChatActivity extends AppCompatActivity {
     private void setupToolbar() {
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            getSupportActionBar().setTitle("AI Assistant");
+            getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+            getSupportActionBar().setTitle("");
         }
+        toolbar.inflateMenu(R.menu.menu_ai_chat);
+        toolbar.setOnMenuItemClickListener(item -> {
+            if (item.getItemId() == R.id.action_reset_chat) {
+                resetChat();
+                return true;
+            }
+            return false;
+        });
+    }
+
+    private void resetChat() {
+        aiHelper.resetConversation();
+        messageList.clear();
+        messageAdapter.notifyDataSetChanged();
+        suggestionsContainer.setVisibility(View.VISIBLE);
+        showWelcomeMessage();
+        Toast.makeText(this, "Conversation reset", Toast.LENGTH_SHORT).show();
     }
 
     private void setupRecyclerView() {
@@ -117,6 +134,7 @@ public class AIChatActivity extends AppCompatActivity {
     }
 
     private void showWelcomeMessage() {
+        emptyState.setVisibility(View.GONE);
         String welcomeText = "👋 Hello! I'm your AI construction assistant.\n\n" +
                 "I can help you with:\n" +
                 "• Cost estimates (in PKR)\n" +

@@ -14,6 +14,7 @@ import com.example.madproject.firebase.BidManager;
 import com.example.madproject.firebase.JobManager;
 import com.example.madproject.firebase.NotificationManager;
 import com.example.madproject.firebase.UserManager;
+import com.example.madproject.helpers.GeminiAIHelper;
 import com.example.madproject.models.Bid;
 import com.example.madproject.models.Job;
 import com.example.madproject.models.Notification;
@@ -27,11 +28,14 @@ public class SubmitBidActivity extends AppCompatActivity {
     private EditText etBidAmount, etCompletionDays, etProposal;
     private CheckBox cbTerms;
     private Button btnSubmitBid, btnCancel;
+    private android.widget.TextView btnAiEstimate;
+    private android.widget.TextView tvJobTitle, tvJobBudget, tvJobTimeline;
 
     private FirebaseAuth mAuth;
     private String currentUserId;
     private String jobId;
     private Job job;
+    private GeminiAIHelper aiHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,18 +64,66 @@ public class SubmitBidActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setTitle("");
 
         etBidAmount = findViewById(R.id.etBidAmount);
         etCompletionDays = findViewById(R.id.etCompletionDays);
         etProposal = findViewById(R.id.etProposal);
         cbTerms = findViewById(R.id.cbTerms);
-        btnSubmitBid = findViewById(R.id.btnSubmitBid);
-        btnCancel = findViewById(R.id.btnCancel);
+        btnSubmitBid  = findViewById(R.id.btnSubmitBid);
+        btnCancel     = findViewById(R.id.btnCancel);
+        btnAiEstimate = findViewById(R.id.btnAiEstimate);
+        tvJobTitle    = findViewById(R.id.tvJobTitle);
+        tvJobBudget   = findViewById(R.id.tvJobBudget);
+        tvJobTimeline = findViewById(R.id.tvJobTimeline);
+        aiHelper = new GeminiAIHelper(this);
     }
 
     private void setupClickListeners() {
         btnSubmitBid.setOnClickListener(v -> submitBid());
         btnCancel.setOnClickListener(v -> finish());
+
+        if (btnAiEstimate != null) {
+            btnAiEstimate.setOnClickListener(v -> getAiCostEstimate());
+        }
+    }
+
+    private void getAiCostEstimate() {
+        if (job == null) {
+            Toast.makeText(this, "Job details not loaded yet", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        btnAiEstimate.setEnabled(false);
+        btnAiEstimate.setText("Estimating...");
+
+        String jobInfo = job.getTitle() + " — " + job.getDescription() +
+                ". Category: " + job.getCategory() + ". Location: " + job.getLocation();
+
+        aiHelper.getConstructionEstimate(jobInfo, new GeminiAIHelper.AIResponseListener() {
+            @Override
+            public void onResponse(String response) {
+                runOnUiThread(() -> {
+                    btnAiEstimate.setEnabled(true);
+                    btnAiEstimate.setText("✨ AI Cost Estimate");
+                    new androidx.appcompat.app.AlertDialog.Builder(SubmitBidActivity.this)
+                            .setTitle("AI Cost Estimate")
+                            .setMessage(response.trim())
+                            .setPositiveButton("Use as Bid", (d, w) -> {
+                                // extract first number from response as a hint
+                            })
+                            .setNegativeButton("Close", null)
+                            .show();
+                });
+            }
+            @Override
+            public void onError(String error) {
+                runOnUiThread(() -> {
+                    btnAiEstimate.setEnabled(true);
+                    btnAiEstimate.setText("✨ AI Cost Estimate");
+                    Toast.makeText(SubmitBidActivity.this, "AI error: " + error, Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
     }
 
     private void loadJobDetails() {
@@ -87,6 +139,13 @@ public class SubmitBidActivity extends AppCompatActivity {
                                     Toast.LENGTH_SHORT).show();
                             finish();
                             return;
+                        }
+
+                        // Populate job summary card
+                        if (job != null) {
+                            if (tvJobTitle    != null) tvJobTitle.setText(job.getTitle());
+                            if (tvJobBudget   != null) tvJobBudget.setText("Rs. " + formatCurrency(job.getBudget()));
+                            if (tvJobTimeline != null) tvJobTimeline.setText(job.getTimeline());
                         }
                     } else {
                         Toast.makeText(this, "Job not found", Toast.LENGTH_SHORT).show();

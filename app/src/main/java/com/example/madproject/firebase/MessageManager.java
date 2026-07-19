@@ -4,6 +4,7 @@ import com.example.madproject.models.Message;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
 
@@ -115,8 +116,8 @@ public class MessageManager {
     }
 
     // REAL-TIME - Listen to messages in chat (sort in memory to avoid index requirement)
-    public void listenToMessages(String chatId, OnMessagesChangedListener listener) {
-        db.collection(COLLECTION_NAME)
+    public ListenerRegistration listenToMessages(String chatId, OnMessagesChangedListener listener) {
+        return db.collection(COLLECTION_NAME)
                 .whereEqualTo("chatId", chatId)
                 .addSnapshotListener((value, error) -> {
                     if (error != null) {

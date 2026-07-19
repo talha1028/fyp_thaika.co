@@ -10,6 +10,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.Button;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -19,9 +21,15 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.madproject.adapters.BidAdapter;
 import com.example.madproject.firebase.BidManager;
 import com.example.madproject.firebase.JobManager;
+import com.example.madproject.firebase.NotificationManager;
+import com.example.madproject.firebase.ReviewManager;
 import com.example.madproject.firebase.UserManager;
+import com.example.madproject.helpers.ContractOrchestrator;
+import com.example.madproject.helpers.GeminiAIHelper;
 import com.example.madproject.models.Bid;
 import com.example.madproject.models.Job;
+import com.example.madproject.models.Notification;
+import com.example.madproject.models.Review;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 
@@ -39,6 +47,19 @@ public class JobDetailActivity extends AppCompatActivity {
     private Button btnSubmitBid;
     private ProgressBar progressBar;
 
+    // Payment card
+    private androidx.cardview.widget.CardView paymentCard;
+    private TextView tvPaymentLabel, tvPaymentAmount;
+    private Button btnPayNow;
+
+    // Mark complete / review
+    private Button btnMarkComplete;
+    private Button btnWriteReview;
+    private Button btnGenerateContract;
+    private Button btnBudgetTips;
+    private GeminiAIHelper aiHelper;
+    private ContractOrchestrator contractOrchestrator;
+
     private FirebaseAuth mAuth;
     private String currentUserId;
     private String jobId;
@@ -47,6 +68,13 @@ public class JobDetailActivity extends AppCompatActivity {
     private BidAdapter bidAdapter;
     private List<Bid> bidList;
     private String currentSortOrder = "lowest"; // "lowest", "highest", "recent"
+
+    private final ActivityResultLauncher<Intent> editJobLauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+                if (result.getResultCode() == RESULT_OK) {
+                    loadJobDetails();
+                }
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,6 +106,7 @@ public class JobDetailActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setTitle("");
         }
 
         tvJobTitle = findViewById(R.id.tvJobTitle);
@@ -99,6 +128,17 @@ public class JobDetailActivity extends AppCompatActivity {
         // Create ProgressBar programmatically
         progressBar = new ProgressBar(this);
         progressBar.setVisibility(View.GONE);
+
+        paymentCard     = findViewById(R.id.paymentCard);
+        tvPaymentLabel  = findViewById(R.id.tvPaymentLabel);
+        tvPaymentAmount = findViewById(R.id.tvPaymentAmount);
+        btnPayNow       = findViewById(R.id.btnPayNow);
+        btnMarkComplete     = findViewById(R.id.btnMarkComplete);
+        btnWriteReview      = findViewById(R.id.btnWriteReview);
+        btnGenerateContract = findViewById(R.id.btnGenerateContract);
+        btnBudgetTips       = findViewById(R.id.btnBudgetTips);
+        aiHelper = new GeminiAIHelper(this);
+        contractOrchestrator = new ContractOrchestrator(this);
     }
 
     private void setupRecyclerView() {
@@ -123,7 +163,7 @@ public class JobDetailActivity extends AppCompatActivity {
 
             @Override
             public void onContactContractor(Bid bid) {
-                contactContractor(bid.getContractorId());
+                contactContractor(bid.getContractorId(), bid.getContractorName());
             }
         });
 
@@ -151,7 +191,7 @@ public class JobDetailActivity extends AppCompatActivity {
 
             @Override
             public void onContactContractor(Bid bid) {
-                contactContractor(bid.getContractorId());
+                contactContractor(bid.getContractorId(), bid.getContractorName());
             }
         });
         rvBids.setAdapter(bidAdapter);
@@ -226,25 +266,90 @@ public class JobDetailActivity extends AppCompatActivity {
 
         // Show/hide buttons based on user role
         boolean isJobOwner = currentUserId.equals(job.getClientId());
+        String status = job.getStatus();
 
         if (isJobOwner) {
-            // Client view: show edit, hide submit bid
-            btnEdit.setVisibility(View.VISIBLE);
-            if (btnSubmitBid != null) {
-                btnSubmitBid.setVisibility(View.GONE);
+            btnEdit.setVisibility("open".equals(status) ? View.VISIBLE : View.GONE);
+            if (btnSubmitBid != null) btnSubmitBid.setVisibility(View.GONE);
+            updatePaymentCard(job);
+
+            // Mark complete: visible when in_progress and both payments handled or no bid amount
+            boolean canComplete = "in_progress".equals(status) &&
+                    (job.getAcceptedBidAmount() == 0 || job.isDepositPaid());
+            if (btnMarkComplete != null) {
+                btnMarkComplete.setVisibility(canComplete ? View.VISIBLE : View.GONE);
+                btnMarkComplete.setOnClickListener(v -> showMarkCompleteDialog());
+            }
+
+            // Write review: visible when completed, contractor assigned, and not yet reviewed
+            if (btnWriteReview != null) {
+                boolean jobDone = "completed".equals(status) && job.getAssignedContractorId() != null
+                        && !job.getAssignedContractorId().isEmpty();
+                btnWriteReview.setVisibility(jobDone ? View.VISIBLE : View.GONE);
+                btnWriteReview.setOnClickListener(v -> showReviewDialog());
+            }
+
+            // Contract: visible when job is in_progress (bid accepted)
+            if (btnGenerateContract != null) {
+                boolean contractReady = "in_progress".equals(status) || "completed".equals(status);
+                btnGenerateContract.setVisibility(contractReady ? View.VISIBLE : View.GONE);
+                btnGenerateContract.setOnClickListener(v -> generateContract());
+            }
+
+            // Budget tips: visible for open and in_progress jobs
+            if (btnBudgetTips != null) {
+                boolean showTips = "open".equals(status) || "in_progress".equals(status);
+                btnBudgetTips.setVisibility(showTips ? View.VISIBLE : View.GONE);
+                btnBudgetTips.setOnClickListener(v -> showBudgetTips());
             }
         } else {
-            // Contractor view: hide edit, show submit bid
             btnEdit.setVisibility(View.GONE);
             if (btnSubmitBid != null) {
-                // Only show submit bid button if job is still open
-                if ("open".equals(job.getStatus())) {
-                    btnSubmitBid.setVisibility(View.VISIBLE);
-                } else {
-                    btnSubmitBid.setVisibility(View.GONE);
-                }
+                btnSubmitBid.setVisibility("open".equals(status) ? View.VISIBLE : View.GONE);
             }
+            if (paymentCard != null) paymentCard.setVisibility(View.GONE);
+            if (btnMarkComplete != null) btnMarkComplete.setVisibility(View.GONE);
+            if (btnWriteReview != null) btnWriteReview.setVisibility(View.GONE);
+            if (btnGenerateContract != null) btnGenerateContract.setVisibility(View.GONE);
+            if (btnBudgetTips != null) btnBudgetTips.setVisibility(View.GONE);
         }
+    }
+
+    private void updatePaymentCard(Job job) {
+        if (paymentCard == null) return;
+        double total = job.getAcceptedBidAmount();
+        String status = job.getStatus();
+
+        boolean depositDue = ("in_progress".equals(status) || "completed".equals(status))
+                && !job.isDepositPaid() && total > 0;
+        boolean finalDue   = "completed".equals(status)
+                && job.isDepositPaid() && !job.isFinalPaid() && total > 0;
+
+        if (depositDue) {
+            paymentCard.setVisibility(View.VISIBLE);
+            tvPaymentLabel.setText("Deposit Due (30%)");
+            tvPaymentAmount.setText(formatRs(total * 0.30));
+            btnPayNow.setOnClickListener(v -> launchPayment());
+        } else if (finalDue) {
+            paymentCard.setVisibility(View.VISIBLE);
+            tvPaymentLabel.setText("Final Payment Due (70%)");
+            tvPaymentAmount.setText(formatRs(total * 0.70));
+            btnPayNow.setOnClickListener(v -> launchPayment());
+        } else {
+            paymentCard.setVisibility(View.GONE);
+        }
+    }
+
+    private void launchPayment() {
+        Intent intent = new Intent(this, PaymentActivity.class);
+        intent.putExtra("jobId", jobId);
+        startActivity(intent);
+    }
+
+    private String formatRs(double amount) {
+        if (amount >= 100000) return String.format("Rs. %.1f L", amount / 100000);
+        if (amount >= 1000)   return String.format("Rs. %,.0f", amount);
+        return String.format("Rs. %.0f", amount);
     }
 
     private void loadBids() {
@@ -349,14 +454,22 @@ public class JobDetailActivity extends AppCompatActivity {
                     // Assign contractor to job
                     JobManager.getInstance()
                             .assignContractor(jobId, bid.getContractorId(),
-                                    bid.getContractorName(), bid.getBidId())
+                                    bid.getContractorName(), bid.getBidId(), bid.getBidAmount())
                             .addOnSuccessListener(aVoid2 -> {
                                 showLoading(false);
+                                Toast.makeText(this, "Bid accepted successfully!", Toast.LENGTH_SHORT).show();
 
-                                Toast.makeText(this, "Bid accepted successfully!",
-                                        Toast.LENGTH_SHORT).show();
+                                // Notify contractor
+                                String notifId = "notif_" + System.currentTimeMillis();
+                                String jobTitle = currentJob != null ? currentJob.getTitle() : "a job";
+                                Notification notif = new Notification(notifId, bid.getContractorId(),
+                                        "Bid Accepted!",
+                                        "Your bid for \"" + jobTitle + "\" was accepted. Get started!",
+                                        "bid", jobId);
+                                NotificationManager.getInstance().createNotification(notif);
 
-                                // Reload job and bids
+                                contractOrchestrator.generateAndSendContract(currentJob, bid);
+
                                 loadJobDetails();
                                 loadBids();
                             })
@@ -370,6 +483,276 @@ public class JobDetailActivity extends AppCompatActivity {
                     showLoading(false);
                     Toast.makeText(this, "Error accepting bid: " + e.getMessage(),
                             Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void showMarkCompleteDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("Mark Job Complete")
+                .setMessage("Mark this job as completed? This will notify the contractor and trigger the final payment.")
+                .setPositiveButton("Mark Complete", (d, w) -> markJobComplete())
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void markJobComplete() {
+        showLoading(true);
+        JobManager.getInstance()
+                .completeJob(jobId)
+                .addOnSuccessListener(aVoid -> {
+                    showLoading(false);
+                    Toast.makeText(this, "Job marked as completed!", Toast.LENGTH_SHORT).show();
+
+                    // Notify contractor
+                    if (currentJob != null && currentJob.getAssignedContractorId() != null) {
+                        String notifId = "notif_" + System.currentTimeMillis();
+                        Notification notif = new Notification(notifId,
+                                currentJob.getAssignedContractorId(),
+                                "Job Completed",
+                                "\"" + currentJob.getTitle() + "\" has been marked complete. Final payment incoming!",
+                                "job", jobId);
+                        NotificationManager.getInstance().createNotification(notif);
+                    }
+
+                    loadJobDetails();
+                })
+                .addOnFailureListener(e -> {
+                    showLoading(false);
+                    Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void showReviewDialog() {
+        if (currentJob == null) return;
+
+        // Check if already reviewed
+        ReviewManager.getInstance()
+                .getReviewsByJob(jobId)
+                .addOnSuccessListener(snap -> {
+                    boolean alreadyReviewed = false;
+                    for (DocumentSnapshot doc : snap) {
+                        Review r = doc.toObject(Review.class);
+                        if (r != null && currentUserId.equals(r.getClientId())) {
+                            alreadyReviewed = true;
+                            break;
+                        }
+                    }
+                    if (alreadyReviewed) {
+                        Toast.makeText(this, "You already reviewed this contractor", Toast.LENGTH_SHORT).show();
+                        if (btnWriteReview != null) btnWriteReview.setVisibility(View.GONE);
+                        return;
+                    }
+                    launchReviewDialog();
+                });
+    }
+
+    private void launchReviewDialog() {
+        android.view.View dialogView = getLayoutInflater().inflate(android.R.layout.simple_list_item_1, null);
+
+        final float[] selectedRating = {5f};
+
+        android.widget.LinearLayout layout = new android.widget.LinearLayout(this);
+        layout.setOrientation(android.widget.LinearLayout.VERTICAL);
+        layout.setPadding(48, 24, 48, 8);
+
+        // Rating label
+        android.widget.TextView tvRatingLabel = new android.widget.TextView(this);
+        tvRatingLabel.setText("Rating (1–5 stars)");
+        tvRatingLabel.setTextSize(14);
+        tvRatingLabel.setTextColor(0xFF212121);
+        layout.addView(tvRatingLabel);
+
+        // Rating bar
+        android.widget.RatingBar ratingBar = new android.widget.RatingBar(this);
+        ratingBar.setNumStars(5);
+        ratingBar.setStepSize(1f);
+        ratingBar.setRating(5f);
+        ratingBar.setOnRatingBarChangeListener((bar, rating, fromUser) -> selectedRating[0] = Math.max(1, rating));
+        layout.addView(ratingBar);
+
+        // Review text
+        android.widget.TextView tvReviewLabel = new android.widget.TextView(this);
+        tvReviewLabel.setText("Review");
+        tvReviewLabel.setTextSize(14);
+        tvReviewLabel.setTextColor(0xFF212121);
+        tvReviewLabel.setPadding(0, 24, 0, 8);
+        layout.addView(tvReviewLabel);
+
+        android.widget.EditText etReview = new android.widget.EditText(this);
+        etReview.setHint("Share your experience with this contractor...");
+        etReview.setMinLines(3);
+        etReview.setMaxLines(5);
+        etReview.setGravity(android.view.Gravity.TOP);
+        etReview.setBackground(null);
+        etReview.setPadding(0, 8, 0, 8);
+        layout.addView(etReview);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Rate Contractor")
+                .setView(layout)
+                .setPositiveButton("Submit Review", (d, w) -> {
+                    String reviewText = etReview.getText().toString().trim();
+                    if (reviewText.isEmpty()) {
+                        Toast.makeText(this, "Please write a review", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    submitReview(selectedRating[0], reviewText);
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void submitReview(float rating, String reviewText) {
+        if (currentJob == null) return;
+        showLoading(true);
+
+        // Get current user name first
+        UserManager.getInstance().getUserObject(currentUserId, new UserManager.OnUserLoadedListener() {
+            @Override
+            public void onUserLoaded(com.example.madproject.models.User user) {
+                String reviewId = "review_" + System.currentTimeMillis();
+                Review review = new Review(reviewId,
+                        currentJob.getAssignedContractorId(),
+                        currentJob.getAssignedContractorName(),
+                        currentUserId,
+                        user.getFullName(),
+                        jobId,
+                        currentJob.getTitle(),
+                        rating,
+                        reviewText);
+
+                ReviewManager.getInstance().createReview(review)
+                        .addOnSuccessListener(aVoid -> {
+                            // Update contractor's average rating
+                            ReviewManager.getInstance().calculateAverageRating(
+                                    currentJob.getAssignedContractorId(),
+                                    (avg, count) -> UserManager.getInstance()
+                                            .updateRating(currentJob.getAssignedContractorId(), avg, count));
+
+                            showLoading(false);
+                            Toast.makeText(JobDetailActivity.this, "Review submitted!", Toast.LENGTH_SHORT).show();
+                            if (btnWriteReview != null) btnWriteReview.setVisibility(View.GONE);
+                        })
+                        .addOnFailureListener(e -> {
+                            showLoading(false);
+                            Toast.makeText(JobDetailActivity.this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        });
+            }
+
+            @Override
+            public void onError(String error) {
+                showLoading(false);
+                Toast.makeText(JobDetailActivity.this, "Could not load user: " + error, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void generateContract() {
+        if (currentJob == null) return;
+        btnGenerateContract.setEnabled(false);
+        btnGenerateContract.setText("Generating...");
+
+        UserManager.getInstance().getUserObject(currentUserId, new UserManager.OnUserLoadedListener() {
+            @Override
+            public void onUserLoaded(com.example.madproject.models.User user) {
+                String clientName = user != null ? user.getFullName() : "Client";
+                String contractorName = currentJob.getAssignedContractorName() != null ?
+                        currentJob.getAssignedContractorName() : "Contractor";
+
+                aiHelper.generateContract(
+                        currentJob.getTitle(),
+                        clientName,
+                        contractorName,
+                        currentJob.getDescription(),
+                        currentJob.getAcceptedBidAmount() > 0 ? currentJob.getAcceptedBidAmount() : currentJob.getBudget(),
+                        currentJob.getTimeline(),
+                        currentJob.getLocation(),
+                        new GeminiAIHelper.AIResponseListener() {
+                            @Override
+                            public void onResponse(String response) {
+                                runOnUiThread(() -> {
+                                    btnGenerateContract.setEnabled(true);
+                                    btnGenerateContract.setText("📄 Generate Contract");
+                                    showContractDialog(response);
+                                });
+                            }
+                            @Override
+                            public void onError(String error) {
+                                runOnUiThread(() -> {
+                                    btnGenerateContract.setEnabled(true);
+                                    btnGenerateContract.setText("📄 Generate Contract");
+                                    Toast.makeText(JobDetailActivity.this, "AI error: " + error, Toast.LENGTH_SHORT).show();
+                                });
+                            }
+                        });
+            }
+            @Override
+            public void onError(String error) {
+                runOnUiThread(() -> {
+                    btnGenerateContract.setEnabled(true);
+                    btnGenerateContract.setText("📄 Generate Contract");
+                });
+            }
+        });
+    }
+
+    private void showContractDialog(String contractText) {
+        android.widget.ScrollView sv = new android.widget.ScrollView(this);
+        android.widget.TextView tv = new android.widget.TextView(this);
+        tv.setText(contractText);
+        tv.setTextSize(13f);
+        tv.setTextColor(0xFF212121);
+        tv.setPadding(48, 32, 48, 32);
+        tv.setLineSpacing(4f, 1f);
+        sv.addView(tv);
+
+        new AlertDialog.Builder(this)
+                .setTitle("📄 Construction Contract")
+                .setView(sv)
+                .setPositiveButton("Share", (d, w) -> {
+                    Intent share = new Intent(Intent.ACTION_SEND);
+                    share.setType("text/plain");
+                    share.putExtra(Intent.EXTRA_SUBJECT, "Contract — " + (currentJob != null ? currentJob.getTitle() : ""));
+                    share.putExtra(Intent.EXTRA_TEXT, contractText);
+                    startActivity(Intent.createChooser(share, "Share Contract"));
+                })
+                .setNegativeButton("Close", null)
+                .show();
+    }
+
+    private void showBudgetTips() {
+        if (currentJob == null) return;
+        btnBudgetTips.setEnabled(false);
+        btnBudgetTips.setText("Analyzing...");
+
+        aiHelper.getBudgetOptimizationTips(
+                currentJob.getCategory() + " — " + currentJob.getTitle(),
+                currentJob.getDescription(),
+                currentJob.getBudget(),
+                currentJob.getLocation(),
+                currentJob.getTimeline(),
+                currentJob.getTotalBids(),
+                new GeminiAIHelper.AIResponseListener() {
+                    @Override
+                    public void onResponse(String response) {
+                        runOnUiThread(() -> {
+                            btnBudgetTips.setEnabled(true);
+                            btnBudgetTips.setText("💡 Budget Optimization");
+                            new AlertDialog.Builder(JobDetailActivity.this)
+                                    .setTitle("💡 Budget Optimization Tips")
+                                    .setMessage(response.trim())
+                                    .setPositiveButton("Got it", null)
+                                    .show();
+                        });
+                    }
+                    @Override
+                    public void onError(String error) {
+                        runOnUiThread(() -> {
+                            btnBudgetTips.setEnabled(true);
+                            btnBudgetTips.setText("💡 Budget Optimization");
+                            Toast.makeText(JobDetailActivity.this, "AI error: " + error, Toast.LENGTH_SHORT).show();
+                        });
+                    }
                 });
     }
 
@@ -406,8 +789,15 @@ public class JobDetailActivity extends AppCompatActivity {
     }
 
     private void contactContractor(String contractorId) {
+        contactContractor(contractorId, null);
+    }
+
+    private void contactContractor(String contractorId, String contractorName) {
         Intent intent = new Intent(this, ChatActivity.class);
         intent.putExtra("receiverId", contractorId);
+        if (contractorName != null && !contractorName.isEmpty()) {
+            intent.putExtra("receiverName", contractorName);
+        }
         startActivity(intent);
     }
 
@@ -420,11 +810,9 @@ public class JobDetailActivity extends AppCompatActivity {
             return;
         }
 
-        Toast.makeText(this, "Edit job feature coming soon!", Toast.LENGTH_SHORT).show();
-        // TODO: Implement JobEditActivity
-        // Intent intent = new Intent(this, JobEditActivity.class);
-        // intent.putExtra("jobId", jobId);
-        // startActivity(intent);
+        Intent intent = new Intent(this, JobEditActivity.class);
+        intent.putExtra("jobId", jobId);
+        editJobLauncher.launch(intent);
     }
 
     private void submitBid() {

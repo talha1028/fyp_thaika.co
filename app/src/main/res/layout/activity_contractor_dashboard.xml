@@ -14,6 +14,7 @@
         android:layout_height="?attr/actionBarSize"
         android:background="@android:color/white"
         android:elevation="4dp"
+        app:menu="@menu/menu_dashboard_toolbar"
         app:layout_constraintTop_toTopOf="parent">
 
         <TextView
@@ -24,15 +25,6 @@
             android:textStyle="bold"
             android:textColor="#212121" />
 
-        <ImageView
-            android:id="@+id/btnNotifications"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:layout_gravity="end"
-            android:layout_marginEnd="16dp"
-            android:padding="4dp"
-            android:src="@drawable/ic_notifications"
-            android:contentDescription="Notifications" />
     </com.google.android.material.appbar.MaterialToolbar>
 
     <ScrollView
@@ -304,6 +296,42 @@
                 android:nestedScrollingEnabled="false"
                 tools:listitem="@layout/item_available_job_card" />
 
+            <!-- Empty state for no available jobs -->
+            <LinearLayout
+                android:id="@+id/emptyState"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="32dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🔍"
+                    android:textSize="48sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="No open jobs right now"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#212121"
+                    android:layout_marginTop="8dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Check back later for new opportunities"
+                    android:textSize="13sp"
+                    android:textColor="#757575"
+                    android:layout_marginTop="4dp"
+                    android:gravity="center" />
+
+            </LinearLayout>
+
         </LinearLayout>
     </ScrollView>
 
@@ -330,5 +358,6 @@
         android:elevation="8dp"
         app:menu="@menu/bottom_nav_contractor"
         app:layout_constraintBottom_toBottomOf="parent" />
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -14,6 +14,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
 import com.example.madproject.firebase.TaskManager;
+import com.example.madproject.helpers.GeminiAIHelper;
 import com.example.madproject.models.Task;
 import com.google.firebase.auth.FirebaseAuth;
 
@@ -25,7 +26,9 @@ public class TaskDetailActivity extends AppCompatActivity {
 
     private TextView tvTaskTitle, tvTaskDescription, tvStartDate, tvEndDate, tvWorkers, tvDailyWages;
     private Button btnUpdateProgress, btnMarkComplete;
+    private TextView btnAiSafetyTips;
     private ProgressBar progressBar;
+    private GeminiAIHelper aiHelper;
 
     private FirebaseAuth mAuth;
     private String currentUserId;
@@ -59,6 +62,7 @@ public class TaskDetailActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setTitle("");
 
         tvTaskTitle = findViewById(R.id.tvTaskTitle);
         tvTaskDescription = findViewById(R.id.tvTaskDescription);
@@ -68,18 +72,62 @@ public class TaskDetailActivity extends AppCompatActivity {
         tvDailyWages = findViewById(R.id.tvDailyWages);
         btnUpdateProgress = findViewById(R.id.btnUpdateProgress);
         btnMarkComplete = findViewById(R.id.btnMarkComplete);
+        btnAiSafetyTips = findViewById(R.id.btnAiSafetyTips);
 
-        // Try to find ProgressBar, create if not in layout
         progressBar = findViewById(R.id.progressBar);
         if (progressBar == null) {
             progressBar = new ProgressBar(this);
             progressBar.setVisibility(View.GONE);
         }
+
+        aiHelper = new GeminiAIHelper(this);
     }
 
     private void setupClickListeners() {
         btnUpdateProgress.setOnClickListener(v -> showUpdateProgressDialog());
         btnMarkComplete.setOnClickListener(v -> markTaskComplete());
+
+        if (btnAiSafetyTips != null) {
+            btnAiSafetyTips.setOnClickListener(v -> showAiSafetyTips());
+        }
+    }
+
+    private void showAiSafetyTips() {
+        String taskTitle = currentTask != null ? currentTask.getTaskTitle() : "";
+        String taskDesc = currentTask != null && currentTask.getDescription() != null ?
+                currentTask.getDescription() : "";
+        String workType = !taskTitle.isEmpty() ? taskTitle : taskDesc;
+
+        if (workType.isEmpty()) {
+            Toast.makeText(this, "Load task first", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        btnAiSafetyTips.setEnabled(false);
+        btnAiSafetyTips.setText("Loading...");
+
+        aiHelper.getSafetyTips(workType, new GeminiAIHelper.AIResponseListener() {
+            @Override
+            public void onResponse(String response) {
+                runOnUiThread(() -> {
+                    btnAiSafetyTips.setEnabled(true);
+                    btnAiSafetyTips.setText("⚠️ AI Safety Tips");
+                    new AlertDialog.Builder(TaskDetailActivity.this)
+                            .setTitle("Safety Tips — " + workType)
+                            .setMessage(response.trim())
+                            .setPositiveButton("Got it", null)
+                            .show();
+                });
+            }
+            @Override
+            public void onError(String error) {
+                runOnUiThread(() -> {
+                    btnAiSafetyTips.setEnabled(true);
+                    btnAiSafetyTips.setText("⚠️ AI Safety Tips");
+                    Toast.makeText(TaskDetailActivity.this, "AI error: " + error, Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
     }
 
     private void loadTaskDetails() {

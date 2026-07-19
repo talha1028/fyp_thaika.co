@@ -17,6 +17,7 @@
         android:required="false" />
 
     <application
+        android:name=".MadProjectApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -75,6 +76,18 @@
             android:name=".MyJobsActivity"
             android:exported="false"
             android:parentActivityName=".ClientDashboardActivity" />
+
+        <activity
+            android:name=".JobEditActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize"
+            android:parentActivityName=".JobDetailActivity" />
+
+        <activity
+            android:name=".PaymentActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize"
+            android:parentActivityName=".JobDetailActivity" />
 
         <activity
             android:name=".SubmitBidActivity"
@@ -158,6 +171,12 @@
             android:windowSoftInputMode="adjustResize"
             android:parentActivityName=".ClientDashboardActivity" />
 
+        <!-- ⭐ Conversations List Activity (NEW) ⭐ -->
+        <activity
+            android:name=".ConversationsListActivity"
+            android:exported="false"
+            android:parentActivityName=".ClientDashboardActivity" />
+
         <activity
             android:name=".NotificationsActivity"
             android:exported="false"
@@ -170,13 +189,18 @@
             android:windowSoftInputMode="adjustResize" />
 
         <activity
+            android:name=".PhoneVerificationActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
             android:name=".SettingsActivity"
             android:exported="false" />
 
         <!-- Google Maps API Key (Optional - Add your key) -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="YOUR_API_KEY_HERE" />
+            android:value="***REMOVED_SECRET***" />
 
         <!-- Firebase Cloud Messaging Service -->
         <service
@@ -191,6 +215,17 @@
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="madproject_notifications" />
+
+        <!-- FileProvider for camera image capture -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
 
     </application>
 

@@ -5,7 +5,6 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -39,7 +38,6 @@ public class ContractorDashboardActivity extends AppCompatActivity {
     private TextView tvContractorName, tvCategory, tvRating, tvReviews;
     private TextView tvActiveProjectsCount, tvCompletedCount, tvTotalEarnings;
     private TextView tvViewAllJobs;
-    private ImageView btnNotifications;
     private CircleImageView ivProfileImage;
     private Button btnViewProfile;
     private RecyclerView rvAvailableJobs;
@@ -100,10 +98,10 @@ public class ContractorDashboardActivity extends AppCompatActivity {
         tvCompletedCount = findViewById(R.id.tvCompletedCount);
         tvTotalEarnings = findViewById(R.id.tvTotalEarnings);
         tvViewAllJobs = findViewById(R.id.tvViewAllJobs);
-        btnNotifications = findViewById(R.id.btnNotifications);
         ivProfileImage = findViewById(R.id.ivProfileImage);
         btnViewProfile = findViewById(R.id.btnViewProfile);
         rvAvailableJobs = findViewById(R.id.rvAvailableJobs);
+        emptyState = findViewById(R.id.emptyState);
         bottomNav = findViewById(R.id.bottomNav);
         fabAIChat = findViewById(R.id.fabAIChat);
 
@@ -135,9 +133,14 @@ public class ContractorDashboardActivity extends AppCompatActivity {
             startActivity(new Intent(ContractorDashboardActivity.this, AIChatActivity.class));
         });
 
-        // Notifications Button
-        btnNotifications.setOnClickListener(v -> {
-            startActivity(new Intent(ContractorDashboardActivity.this, NotificationsActivity.class));
+        // Notifications via toolbar menu
+        com.google.android.material.appbar.MaterialToolbar toolbar = findViewById(R.id.toolbar);
+        toolbar.setOnMenuItemClickListener(item -> {
+            if (item.getItemId() == R.id.action_notifications) {
+                startActivity(new Intent(ContractorDashboardActivity.this, NotificationsActivity.class));
+                return true;
+            }
+            return false;
         });
 
         // View Profile Button
@@ -166,8 +169,7 @@ public class ContractorDashboardActivity extends AppCompatActivity {
                 startActivity(new Intent(ContractorDashboardActivity.this, MyProjectsActivity.class));
                 return true;
             } else if (id == R.id.nav_messages) {
-                // TODO: Create ConversationsListActivity to show all chats
-                Toast.makeText(this, "Access messages from contractor profiles or job details", Toast.LENGTH_LONG).show();
+                startActivity(new Intent(ContractorDashboardActivity.this, ConversationsListActivity.class));
                 return true;
             } else if (id == R.id.nav_profile) {
                 startActivity(new Intent(ContractorDashboardActivity.this, SettingsActivity.class));
@@ -306,10 +308,11 @@ public class ContractorDashboardActivity extends AppCompatActivity {
                     if (jobList.isEmpty()) {
                         Log.d(TAG, "No open jobs found");
                         rvAvailableJobs.setVisibility(View.GONE);
-                        // Show empty state if you have it
+                        if (emptyState != null) emptyState.setVisibility(View.VISIBLE);
                     } else {
                         Log.d(TAG, "Open jobs found - showing RecyclerView");
                         rvAvailableJobs.setVisibility(View.VISIBLE);
+                        if (emptyState != null) emptyState.setVisibility(View.GONE);
                     }
                 })
                 .addOnFailureListener(e -> {

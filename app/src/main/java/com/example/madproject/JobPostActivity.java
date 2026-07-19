@@ -1,5 +1,6 @@
 package com.example.madproject;
 
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
@@ -10,15 +11,27 @@ import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.content.FileProvider;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.madproject.adapters.SelectedPhotoAdapter;
 import com.example.madproject.firebase.JobManager;
 import com.example.madproject.firebase.UserManager;
+import com.example.madproject.helpers.GeminiAIHelper;
 import com.example.madproject.models.Job;
 import com.example.madproject.models.User;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class JobPostActivity extends AppCompatActivity {
@@ -26,20 +39,46 @@ public class JobPostActivity extends AppCompatActivity {
     private EditText etJobTitle, etJobDescription, etBudget, etTimeline, etAddress;
     private Spinner spinnerCategory, spinnerCity;
     private Button btnPostJob, btnCancel, btnTakePhoto, btnAddPhoto;
+    private android.widget.TextView btnAiGenerateDesc, btnAiContractorTip, btnAiPermitCheck;
     private Toolbar toolbar;
     private ProgressBar progressBar;
+    private RecyclerView rvSelectedPhotos;
+    private GeminiAIHelper aiHelper;
 
     private FirebaseAuth mAuth;
+    private StorageReference storageRef;
     private String currentUserId;
     private String currentUserName = "";
+
+    private final List<Uri> selectedPhotoUris = new ArrayList<>();
+    private SelectedPhotoAdapter photoAdapter;
+    private Uri cameraImageUri;
+
+    private final ActivityResultLauncher<Uri> cameraLauncher =
+            registerForActivityResult(new ActivityResultContracts.TakePicture(), success -> {
+                if (success && cameraImageUri != null) {
+                    selectedPhotoUris.add(cameraImageUri);
+                    photoAdapter.notifyItemInserted(selectedPhotoUris.size() - 1);
+                    rvSelectedPhotos.setVisibility(View.VISIBLE);
+                }
+            });
+
+    private final ActivityResultLauncher<String> galleryLauncher =
+            registerForActivityResult(new ActivityResultContracts.GetMultipleContents(), uris -> {
+                if (uris != null && !uris.isEmpty()) {
+                    selectedPhotoUris.addAll(uris);
+                    photoAdapter.notifyDataSetChanged();
+                    rvSelectedPhotos.setVisibility(View.VISIBLE);
+                }
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_job_post);
 
-        // Initialize Firebase
         mAuth = FirebaseAuth.getInstance();
+        storageRef = FirebaseStorage.getInstance().getReference();
         currentUserId = mAuth.getCurrentUser() != null ? mAuth.getCurrentUser().getUid() : "";
 
         initViews();
@@ -53,6 +92,7 @@ public class JobPostActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setTitle("");
         }
 
         etJobTitle = findViewById(R.id.etJobTitle);
@@ -66,10 +106,24 @@ public class JobPostActivity extends AppCompatActivity {
         btnCancel = findViewById(R.id.btnCancel);
         btnTakePhoto = findViewById(R.id.btnTakePhoto);
         btnAddPhoto = findViewById(R.id.btnAddPhoto);
+        rvSelectedPhotos = findViewById(R.id.rvSelectedPhotos);
 
-        // Create ProgressBar programmatically if not in XML
         progressBar = new ProgressBar(this);
         progressBar.setVisibility(View.GONE);
+
+        btnAiGenerateDesc   = findViewById(R.id.btnAiGenerateDesc);
+        btnAiContractorTip  = findViewById(R.id.btnAiContractorTip);
+        btnAiPermitCheck    = findViewById(R.id.btnAiPermitCheck);
+        aiHelper = new GeminiAIHelper(this);
+
+        photoAdapter = new SelectedPhotoAdapter(this, selectedPhotoUris, position -> {
+            selectedPhotoUris.remove(position);
+            photoAdapter.notifyItemRemoved(position);
+            if (selectedPhotoUris.isEmpty()) rvSelectedPhotos.setVisibility(View.GONE);
+        });
+        rvSelectedPhotos.setLayoutManager(
+                new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+        rvSelectedPhotos.setAdapter(photoAdapter);
     }
 
     private void setupSpinners() {
@@ -167,14 +221,129 @@ public class JobPostActivity extends AppCompatActivity {
     private void setupClickListeners() {
         btnPostJob.setOnClickListener(v -> postJob());
         btnCancel.setOnClickListener(v -> finish());
+        btnTakePhoto.setOnClickListener(v -> launchCamera());
+        btnAddPhoto.setOnClickListener(v -> galleryLauncher.launch("image/*"));
 
-        // TODO: Implement photo functionality
-        btnTakePhoto.setOnClickListener(v -> {
-            Toast.makeText(this, "Camera feature coming soon!", Toast.LENGTH_SHORT).show();
+        if (btnAiGenerateDesc != null) {
+            btnAiGenerateDesc.setOnClickListener(v -> generateAiDescription());
+        }
+        if (btnAiContractorTip != null) {
+            btnAiContractorTip.setOnClickListener(v -> getAiContractorAdvice());
+        }
+        if (btnAiPermitCheck != null) {
+            btnAiPermitCheck.setOnClickListener(v -> checkPermitRequirements());
+        }
+    }
+
+    private void checkPermitRequirements() {
+        String category = spinnerCategory.getSelectedItem() != null ?
+                spinnerCategory.getSelectedItem().toString() : "";
+        String city = spinnerCity.getSelectedItem() != null ?
+                spinnerCity.getSelectedItem().toString() : "";
+
+        if (category.isEmpty() || category.equals("Select Category")) {
+            Toast.makeText(this, "Select a category first", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String location = (!city.isEmpty() && !city.equals("Select City")) ? city : "Pakistan";
+
+        btnAiPermitCheck.setEnabled(false);
+        btnAiPermitCheck.setText("Checking...");
+
+        aiHelper.checkPermitRequirements(category, location, new GeminiAIHelper.AIResponseListener() {
+            @Override
+            public void onResponse(String response) {
+                runOnUiThread(() -> {
+                    btnAiPermitCheck.setEnabled(true);
+                    btnAiPermitCheck.setText("📋 Permit Check");
+                    new androidx.appcompat.app.AlertDialog.Builder(JobPostActivity.this)
+                            .setTitle("📋 Permits & Compliance — " + category)
+                            .setMessage(response.trim())
+                            .setPositiveButton("Got it", null)
+                            .show();
+                });
+            }
+            @Override
+            public void onError(String error) {
+                runOnUiThread(() -> {
+                    btnAiPermitCheck.setEnabled(true);
+                    btnAiPermitCheck.setText("📋 Permit Check");
+                    Toast.makeText(JobPostActivity.this, "AI error: " + error, Toast.LENGTH_SHORT).show();
+                });
+            }
         });
+    }
 
-        btnAddPhoto.setOnClickListener(v -> {
-            Toast.makeText(this, "Gallery feature coming soon!", Toast.LENGTH_SHORT).show();
+    private void generateAiDescription() {
+        String title = etJobTitle.getText().toString().trim();
+        String category = spinnerCategory.getSelectedItem() != null ?
+                spinnerCategory.getSelectedItem().toString() : "";
+        String existing = etJobDescription.getText().toString().trim();
+
+        if (title.isEmpty() && category.isEmpty() && existing.isEmpty()) {
+            Toast.makeText(this, "Enter a job title or description first", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String info = (!title.isEmpty() ? "Job: " + title : "") +
+                (!category.isEmpty() && !category.equals("Select Category") ? ", Category: " + category : "") +
+                (!existing.isEmpty() ? ", Notes: " + existing : "");
+
+        btnAiGenerateDesc.setEnabled(false);
+        btnAiGenerateDesc.setText("Generating...");
+        Toast.makeText(this, "Generating description...", Toast.LENGTH_SHORT).show();
+
+        aiHelper.helpWriteJobDescription(info, new GeminiAIHelper.AIResponseListener() {
+            @Override
+            public void onResponse(String response) {
+                runOnUiThread(() -> {
+                    etJobDescription.setText(response.trim());
+                    btnAiGenerateDesc.setEnabled(true);
+                    btnAiGenerateDesc.setText("✨ AI Generate");
+                });
+            }
+            @Override
+            public void onError(String error) {
+                runOnUiThread(() -> {
+                    Toast.makeText(JobPostActivity.this, "AI error: " + error, Toast.LENGTH_SHORT).show();
+                    btnAiGenerateDesc.setEnabled(true);
+                    btnAiGenerateDesc.setText("✨ AI Generate");
+                });
+            }
+        });
+    }
+
+    private void getAiContractorAdvice() {
+        String title = etJobTitle.getText().toString().trim();
+        String desc = etJobDescription.getText().toString().trim();
+        if (title.isEmpty() && desc.isEmpty()) {
+            Toast.makeText(this, "Enter job details first", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String jobInfo = (!title.isEmpty() ? title : "") + (!desc.isEmpty() ? ": " + desc : "");
+        btnAiContractorTip.setEnabled(false);
+
+        aiHelper.getContractorRecommendation(jobInfo, new GeminiAIHelper.AIResponseListener() {
+            @Override
+            public void onResponse(String response) {
+                runOnUiThread(() -> {
+                    btnAiContractorTip.setEnabled(true);
+                    new androidx.appcompat.app.AlertDialog.Builder(JobPostActivity.this)
+                            .setTitle("AI Contractor Advice")
+                            .setMessage(response.trim())
+                            .setPositiveButton("Got it", null)
+                            .show();
+                });
+            }
+            @Override
+            public void onError(String error) {
+                runOnUiThread(() -> {
+                    btnAiContractorTip.setEnabled(true);
+                    Toast.makeText(JobPostActivity.this, "AI error: " + error, Toast.LENGTH_SHORT).show();
+                });
+            }
         });
     }
 
@@ -201,8 +370,20 @@ public class JobPostActivity extends AppCompatActivity {
                 });
     }
 
+    private void launchCamera() {
+        try {
+            File photoDir = new File(getCacheDir(), "photos");
+            photoDir.mkdirs();
+            File photoFile = new File(photoDir, "job_" + System.currentTimeMillis() + ".jpg");
+            cameraImageUri = FileProvider.getUriForFile(this,
+                    getPackageName() + ".provider", photoFile);
+            cameraLauncher.launch(cameraImageUri);
+        } catch (Exception e) {
+            Toast.makeText(this, "Camera unavailable", Toast.LENGTH_SHORT).show();
+        }
+    }
+
     private void postJob() {
-        // Get input values
         String title = etJobTitle.getText().toString().trim();
         String description = etJobDescription.getText().toString().trim();
         String budgetStr = etBudget.getText().toString().trim();
@@ -211,58 +392,72 @@ public class JobPostActivity extends AppCompatActivity {
         String category = spinnerCategory.getSelectedItem().toString();
         String city = spinnerCity.getSelectedItem().toString();
 
-        // Validate inputs
         if (!validateInputs(title, description, budgetStr, timelineStr, address, category, city)) {
             return;
         }
 
-        // Parse numeric values
         double budget = Double.parseDouble(budgetStr);
         String timeline = timelineStr + " days";
-
-        // Create location string (city + address)
         String location = city + ", " + address;
-
-        // Generate unique job ID
         String jobId = "job_" + UUID.randomUUID().toString();
 
-        // Create Job object
-        Job job = new Job(
-                jobId,
-                currentUserId,
-                currentUserName,
-                title,
-                description,
-                category,
-                budget,
-                timeline,
-                location
-        );
+        Job job = new Job(jobId, currentUserId, currentUserName,
+                title, description, category, budget, timeline, location);
 
-        // Show loading
         showLoading(true);
 
-        // Save job to Firestore
+        if (selectedPhotoUris.isEmpty()) {
+            saveJobToFirestore(job);
+        } else {
+            uploadPhotosAndPost(job);
+        }
+    }
+
+    private void uploadPhotosAndPost(Job job) {
+        List<String> uploadedUrls = new ArrayList<>();
+        int[] remaining = {selectedPhotoUris.size()};
+
+        for (int i = 0; i < selectedPhotoUris.size(); i++) {
+            Uri uri = selectedPhotoUris.get(i);
+            String path = "job_attachments/" + job.getJobId() + "/" + i + ".jpg";
+            StorageReference ref = storageRef.child(path);
+            ref.putFile(uri)
+                    .continueWithTask(task -> {
+                        if (!task.isSuccessful()) throw task.getException();
+                        return ref.getDownloadUrl();
+                    })
+                    .addOnSuccessListener(downloadUri -> {
+                        uploadedUrls.add(downloadUri.toString());
+                        remaining[0]--;
+                        if (remaining[0] == 0) {
+                            job.setAttachments(uploadedUrls);
+                            saveJobToFirestore(job);
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        remaining[0]--;
+                        if (remaining[0] == 0) {
+                            job.setAttachments(uploadedUrls);
+                            saveJobToFirestore(job);
+                        }
+                    });
+        }
+    }
+
+    private void saveJobToFirestore(Job job) {
         JobManager.getInstance()
                 .createJob(job)
                 .addOnSuccessListener(aVoid -> {
                     showLoading(false);
-
-                    // Update client's active jobs count
                     updateClientJobCount();
-
                     Toast.makeText(JobPostActivity.this,
-                            "Job posted successfully!",
-                            Toast.LENGTH_SHORT).show();
-
-                    // Return to previous screen
+                            "Job posted successfully!", Toast.LENGTH_SHORT).show();
                     finish();
                 })
                 .addOnFailureListener(e -> {
                     showLoading(false);
                     Toast.makeText(JobPostActivity.this,
-                            "Error posting job: " + e.getMessage(),
-                            Toast.LENGTH_LONG).show();
+                            "Error posting job: " + e.getMessage(), Toast.LENGTH_LONG).show();
                 });
     }
 

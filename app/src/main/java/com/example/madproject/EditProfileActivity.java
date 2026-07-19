@@ -1,5 +1,7 @@
 package com.example.madproject;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
@@ -8,14 +10,20 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
+import com.bumptech.glide.Glide;
 import com.example.madproject.firebase.UserManager;
 import com.example.madproject.models.User;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
@@ -26,18 +34,34 @@ public class EditProfileActivity extends AppCompatActivity {
     private Spinner spinnerCity;
     private Button btnSaveProfile, btnCancel;
     private ProgressBar progressBar;
+    private TextView tvPhoneVerifyStatus;
 
     private FirebaseAuth mAuth;
+    private StorageReference storageRef;
     private String currentUserId;
     private User currentUser;
+
+    private final ActivityResultLauncher<String> imagePickerLauncher =
+            registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
+                if (uri != null) uploadProfilePicture(uri);
+            });
+
+    private final ActivityResultLauncher<Intent> phoneVerifyLauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+                if (result.getResultCode() == RESULT_OK) {
+                    if (currentUser != null) currentUser.setPhoneVerified(true);
+                    updateVerifyBadge(true);
+                    Toast.makeText(this, "Phone verified!", Toast.LENGTH_SHORT).show();
+                }
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_edit_profile);
 
-        // Initialize Firebase
         mAuth = FirebaseAuth.getInstance();
+        storageRef = FirebaseStorage.getInstance().getReference();
         currentUserId = mAuth.getCurrentUser() != null ? mAuth.getCurrentUser().getUid() : "";
 
         if (currentUserId.isEmpty()) {
@@ -56,6 +80,7 @@ public class EditProfileActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setTitle("");
 
         ivProfilePicture = findViewById(R.id.ivProfilePicture);
         etFullName = findViewById(R.id.etFullName);
@@ -65,6 +90,7 @@ public class EditProfileActivity extends AppCompatActivity {
         spinnerCity = findViewById(R.id.spinnerCity);
         btnSaveProfile = findViewById(R.id.btnSaveProfile);
         btnCancel = findViewById(R.id.btnCancel);
+        tvPhoneVerifyStatus = findViewById(R.id.tvPhoneVerifyStatus);
 
         // Try to find ProgressBar
         progressBar = findViewById(R.id.progressBar);
@@ -97,6 +123,21 @@ public class EditProfileActivity extends AppCompatActivity {
     private void setupClickListeners() {
         btnSaveProfile.setOnClickListener(v -> saveProfile());
         btnCancel.setOnClickListener(v -> finish());
+        ivProfilePicture.setOnClickListener(v -> imagePickerLauncher.launch("image/*"));
+        if (tvPhoneVerifyStatus != null) {
+            tvPhoneVerifyStatus.setOnClickListener(v -> {
+                if (currentUser != null && currentUser.isPhoneVerified()) return;
+                String phone = etPhone.getText().toString().trim();
+                if (phone.isEmpty()) {
+                    etPhone.setError("Enter phone number first");
+                    etPhone.requestFocus();
+                    return;
+                }
+                Intent intent = new Intent(this, PhoneVerificationActivity.class);
+                intent.putExtra("phoneNumber", phone);
+                phoneVerifyLauncher.launch(intent);
+            });
+        }
     }
 
     private void loadProfile() {
@@ -126,14 +167,28 @@ public class EditProfileActivity extends AppCompatActivity {
         etPhone.setText(user.getPhoneNumber());
         etAddress.setText(user.getAddress());
 
-        // Set spinner value
         setSpinnerValue(spinnerCity, user.getCity());
+        updateVerifyBadge(user.isPhoneVerified());
 
-        // Load profile picture (placeholder for now)
-        // TODO: Use Glide/Picasso to load image
-        // if (user.getProfilePictureUrl() != null) {
-        //     Glide.with(this).load(user.getProfilePictureUrl()).into(ivProfilePicture);
-        // }
+        Glide.with(this)
+                .load(user.getProfilePictureUrl())
+                .placeholder(R.drawable.ic_default_profile)
+                .error(R.drawable.ic_default_profile)
+                .circleCrop()
+                .into(ivProfilePicture);
+    }
+
+    private void updateVerifyBadge(boolean verified) {
+        if (tvPhoneVerifyStatus == null) return;
+        if (verified) {
+            tvPhoneVerifyStatus.setText("Verified");
+            tvPhoneVerifyStatus.setTextColor(0xFF4CAF50);
+            tvPhoneVerifyStatus.setBackgroundResource(R.drawable.bg_status_green);
+        } else {
+            tvPhoneVerifyStatus.setText("Verify");
+            tvPhoneVerifyStatus.setTextColor(0xFF7C4DFF);
+            tvPhoneVerifyStatus.setBackgroundResource(R.drawable.bg_pill_unselected);
+        }
     }
 
     private void saveProfile() {
@@ -219,6 +274,35 @@ public class EditProfileActivity extends AppCompatActivity {
             etAddress.setEnabled(true);
             spinnerCity.setEnabled(true);
         }
+    }
+
+    private void uploadProfilePicture(Uri imageUri) {
+        showLoading(true);
+        StorageReference ref = storageRef.child("profile_pictures/" + currentUserId + ".jpg");
+        ref.putFile(imageUri)
+                .continueWithTask(task -> {
+                    if (!task.isSuccessful()) throw task.getException();
+                    return ref.getDownloadUrl();
+                })
+                .addOnSuccessListener(downloadUri -> {
+                    String url = downloadUri.toString();
+                    currentUser.setProfilePictureUrl(url);
+                    UserManager.getInstance()
+                            .updateField(currentUserId, "profilePictureUrl", url)
+                            .addOnSuccessListener(aVoid -> {
+                                showLoading(false);
+                                Glide.with(this).load(url).circleCrop().into(ivProfilePicture);
+                                Toast.makeText(this, "Profile picture updated", Toast.LENGTH_SHORT).show();
+                            })
+                            .addOnFailureListener(e -> {
+                                showLoading(false);
+                                Toast.makeText(this, "Failed to save picture URL", Toast.LENGTH_SHORT).show();
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    showLoading(false);
+                    Toast.makeText(this, "Upload failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
     }
 
     @Override

@@ -65,7 +65,7 @@ public class AllReviewsActivity extends AppCompatActivity {
             if (contractorName != null && !contractorName.isEmpty()) {
                 getSupportActionBar().setTitle(contractorName + "'s Reviews");
             } else {
-                getSupportActionBar().setTitle("Reviews");
+                getSupportActionBar().setTitle("");
             }
         }
 

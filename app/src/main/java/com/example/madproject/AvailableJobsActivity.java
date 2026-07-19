@@ -3,16 +3,19 @@ package com.example.madproject;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
+import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
-import android.widget.ArrayAdapter;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -35,6 +38,9 @@ public class AvailableJobsActivity extends AppCompatActivity {
     private Toolbar toolbar;
     private EditText etSearch;
     private Spinner spinnerCategory;
+    private Spinner spinnerCity;
+    private TextView btnBudgetFilter;
+    private TextView btnSort;
     private RecyclerView rvJobs;
     private LinearLayout emptyState;
     private ProgressBar progressBar;
@@ -45,6 +51,10 @@ public class AvailableJobsActivity extends AppCompatActivity {
     private JobAdapter jobAdapter;
     private List<Job> allJobsList;
     private List<Job> filteredJobsList;
+
+    private double minBudget = 0;
+    private double maxBudget = Double.MAX_VALUE;
+    private String selectedSort = "newest";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,6 +68,7 @@ public class AvailableJobsActivity extends AppCompatActivity {
         initViews();
         setupToolbar();
         setupCategorySpinner();
+        setupCitySpinner();
         setupRecyclerView();
         setupSearchFilter();
         loadOpenJobs();
@@ -74,15 +85,21 @@ public class AvailableJobsActivity extends AppCompatActivity {
         toolbar = findViewById(R.id.toolbar);
         etSearch = findViewById(R.id.etSearch);
         spinnerCategory = findViewById(R.id.spinnerCategory);
+        spinnerCity = findViewById(R.id.spinnerCity);
+        btnBudgetFilter = findViewById(R.id.btnBudgetFilter);
+        btnSort = findViewById(R.id.btnSort);
         rvJobs = findViewById(R.id.rvJob);
         emptyState = findViewById(R.id.emptyState);
         progressBar = findViewById(R.id.progressBar);
+
+        btnBudgetFilter.setOnClickListener(v -> showBudgetDialog());
+        btnSort.setOnClickListener(v -> showSortDialog());
     }
 
     private void setupToolbar() {
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayHomeAsUpEnabled(false);
             getSupportActionBar().setTitle("Available Jobs");
         }
     }
@@ -193,29 +210,131 @@ public class AvailableJobsActivity extends AppCompatActivity {
                 });
     }
 
+    private void setupCitySpinner() {
+        String[] cities = {
+                "All Cities", "Karachi", "Lahore", "Islamabad", "Rawalpindi",
+                "Faisalabad", "Multan", "Peshawar", "Quetta", "Sialkot",
+                "Gujranwala", "Hyderabad", "Abbottabad", "Murree", "Other"
+        };
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item, cities);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerCity.setAdapter(adapter);
+        spinnerCity.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(android.widget.AdapterView<?> p, View v, int pos, long id) {
+                filterJobs();
+            }
+            @Override
+            public void onNothingSelected(android.widget.AdapterView<?> p) {}
+        });
+    }
+
+    private void showBudgetDialog() {
+        EditText etMin = new EditText(this);
+        EditText etMax = new EditText(this);
+        etMin.setHint("Min Budget (Rs.)");
+        etMax.setHint("Max Budget (Rs.)");
+        etMin.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        etMax.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        if (minBudget > 0) etMin.setText(String.valueOf((int) minBudget));
+        if (maxBudget < Double.MAX_VALUE) etMax.setText(String.valueOf((int) maxBudget));
+
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(48, 16, 48, 16);
+        layout.addView(etMin);
+        layout.addView(etMax);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Budget Filter (Rs.)")
+                .setView(layout)
+                .setPositiveButton("Apply", (d, w) -> {
+                    String minStr = etMin.getText().toString().trim();
+                    String maxStr = etMax.getText().toString().trim();
+                    minBudget = TextUtils.isEmpty(minStr) ? 0 : Double.parseDouble(minStr);
+                    maxBudget = TextUtils.isEmpty(maxStr) ? Double.MAX_VALUE : Double.parseDouble(maxStr);
+                    boolean hasFilter = minBudget > 0 || maxBudget < Double.MAX_VALUE;
+                    btnBudgetFilter.setBackgroundResource(hasFilter ?
+                            R.drawable.bg_pill_selected : R.drawable.bg_pill_unselected);
+                    btnBudgetFilter.setTextColor(hasFilter ?
+                            0xFFFFFFFF : 0xFF7C4DFF);
+                    filterJobs();
+                })
+                .setNegativeButton("Clear", (d, w) -> {
+                    minBudget = 0;
+                    maxBudget = Double.MAX_VALUE;
+                    btnBudgetFilter.setBackgroundResource(R.drawable.bg_pill_unselected);
+                    btnBudgetFilter.setTextColor(0xFF7C4DFF);
+                    filterJobs();
+                })
+                .show();
+    }
+
+    private void showSortDialog() {
+        String[] options = {"Newest First", "Oldest First", "Lowest Budget", "Highest Budget", "Most Bids"};
+        new AlertDialog.Builder(this)
+                .setTitle("Sort Jobs")
+                .setItems(options, (d, which) -> {
+                    switch (which) {
+                        case 0: selectedSort = "newest"; btnSort.setText("Newest"); break;
+                        case 1: selectedSort = "oldest"; btnSort.setText("Oldest"); break;
+                        case 2: selectedSort = "budget_low"; btnSort.setText("Budget ↑"); break;
+                        case 3: selectedSort = "budget_high"; btnSort.setText("Budget ↓"); break;
+                        case 4: selectedSort = "most_bids"; btnSort.setText("Most Bids"); break;
+                    }
+                    filterJobs();
+                })
+                .show();
+    }
+
     private void filterJobs() {
         String searchQuery = etSearch.getText().toString().toLowerCase().trim();
         String selectedCategory = spinnerCategory.getSelectedItem().toString();
+        String selectedCity = spinnerCity.getSelectedItem() != null ?
+                spinnerCity.getSelectedItem().toString() : "All Cities";
 
         filteredJobsList.clear();
 
         for (Job job : allJobsList) {
             boolean matchesSearch = searchQuery.isEmpty() ||
-                    job.getTitle().toLowerCase().contains(searchQuery) ||
-                    job.getDescription().toLowerCase().contains(searchQuery) ||
-                    job.getLocation().toLowerCase().contains(searchQuery);
+                    (job.getTitle() != null && job.getTitle().toLowerCase().contains(searchQuery)) ||
+                    (job.getDescription() != null && job.getDescription().toLowerCase().contains(searchQuery)) ||
+                    (job.getLocation() != null && job.getLocation().toLowerCase().contains(searchQuery));
 
             boolean matchesCategory = selectedCategory.equals("All Categories") ||
-                    job.getCategory().equals(selectedCategory);
+                    (job.getCategory() != null && job.getCategory().equals(selectedCategory));
 
-            if (matchesSearch && matchesCategory) {
+            boolean matchesCity = selectedCity.equals("All Cities") ||
+                    (job.getLocation() != null && job.getLocation().toLowerCase().contains(selectedCity.toLowerCase()));
+
+            boolean matchesBudget = job.getBudget() >= minBudget && job.getBudget() <= maxBudget;
+
+            if (matchesSearch && matchesCategory && matchesCity && matchesBudget) {
                 filteredJobsList.add(job);
             }
         }
 
+        switch (selectedSort) {
+            case "newest":
+                Collections.sort(filteredJobsList, (j1, j2) -> Long.compare(j2.getPostedDate(), j1.getPostedDate()));
+                break;
+            case "oldest":
+                Collections.sort(filteredJobsList, (j1, j2) -> Long.compare(j1.getPostedDate(), j2.getPostedDate()));
+                break;
+            case "budget_low":
+                Collections.sort(filteredJobsList, (j1, j2) -> Double.compare(j1.getBudget(), j2.getBudget()));
+                break;
+            case "budget_high":
+                Collections.sort(filteredJobsList, (j1, j2) -> Double.compare(j2.getBudget(), j1.getBudget()));
+                break;
+            case "most_bids":
+                Collections.sort(filteredJobsList, (j1, j2) -> Integer.compare(j2.getTotalBids(), j1.getTotalBids()));
+                break;
+        }
+
         jobAdapter.notifyDataSetChanged();
 
-        // Show/hide empty state
         if (filteredJobsList.isEmpty()) {
             rvJobs.setVisibility(View.GONE);
             emptyState.setVisibility(View.VISIBLE);

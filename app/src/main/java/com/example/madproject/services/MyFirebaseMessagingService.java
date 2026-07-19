@@ -101,9 +101,16 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
         if ("bid".equals(type) || "job".equals(type)) {
             intent = new Intent(this, JobDetailActivity.class);
-            if (relatedId != null) {
-                intent.putExtra("jobId", relatedId);
-            }
+            if (relatedId != null) intent.putExtra("jobId", relatedId);
+        } else if ("message".equals(type)) {
+            intent = new Intent(this, com.example.madproject.ChatActivity.class);
+            if (relatedId != null) intent.putExtra("receiverId", relatedId);
+        } else if ("task".equals(type)) {
+            intent = new Intent(this, com.example.madproject.TaskDetailActivity.class);
+            if (relatedId != null) intent.putExtra("taskId", relatedId);
+        } else if ("payment".equals(type)) {
+            intent = new Intent(this, com.example.madproject.PaymentActivity.class);
+            if (relatedId != null) intent.putExtra("jobId", relatedId);
         } else {
             intent = new Intent(this, NotificationsActivity.class);
         }

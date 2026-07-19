@@ -1,6 +1,6 @@
 package com.example.madproject;
 
-import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -8,6 +8,8 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -19,6 +21,8 @@ import com.example.madproject.firebase.UserManager;
 import com.example.madproject.models.User;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,13 +35,20 @@ public class PortfolioGalleryActivity extends AppCompatActivity {
     private FloatingActionButton fabAddPortfolio;
     private ProgressBar progressBar;
     private LinearLayout emptyState;
+    private android.widget.TextView tvTotalProjects, tvTotalPhotos, tvTotalLikes;
 
     private String contractorId;
     private String currentUserId;
     private boolean isOwnProfile;
 
+    private StorageReference storageRef;
     private PortfolioAdapter portfolioAdapter;
     private List<String> portfolioList;
+
+    private final ActivityResultLauncher<String> imagePickerLauncher =
+            registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
+                if (uri != null) uploadPortfolioImage(uri);
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,11 +64,11 @@ public class PortfolioGalleryActivity extends AppCompatActivity {
         isOwnProfile = currentUserId.equals(contractorId);
 
         if (contractorId == null || contractorId.isEmpty()) {
-            // If no contractor ID, use current user's profile
             contractorId = currentUserId;
             isOwnProfile = true;
         }
 
+        storageRef = FirebaseStorage.getInstance().getReference();
         initViews();
         setupRecyclerView();
         loadPortfolio();
@@ -67,14 +78,18 @@ public class PortfolioGalleryActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            getSupportActionBar().setTitle("Portfolio");
+            getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+            getSupportActionBar().setTitle("");
         }
 
-        rvPortfolio = findViewById(R.id.rvPortfolio);
+        rvPortfolio     = findViewById(R.id.rvPortfolio);
         fabAddPortfolio = findViewById(R.id.fabAddPortfolio);
-        progressBar = findViewById(R.id.progressBar);
-        emptyState = findViewById(R.id.emptyState);
+        progressBar     = findViewById(R.id.progressBar);
+        emptyState      = findViewById(R.id.emptyState);
+        tvTotalProjects = findViewById(R.id.tvTotalProjects);
+        tvTotalPhotos   = findViewById(R.id.tvTotalPhotos);
+        tvTotalLikes    = findViewById(R.id.tvTotalLikes);
+        if (tvTotalLikes != null) tvTotalLikes.setText("—");
 
         rvPortfolio.setLayoutManager(new GridLayoutManager(this, 2));
 
@@ -125,6 +140,9 @@ public class PortfolioGalleryActivity extends AppCompatActivity {
                 portfolioAdapter.notifyDataSetChanged();
                 updateEmptyState();
 
+                if (tvTotalPhotos   != null) tvTotalPhotos.setText(String.valueOf(portfolioList.size()));
+                if (tvTotalProjects != null) tvTotalProjects.setText(String.valueOf(user.getCompletedProjects()));
+
                 Log.d(TAG, "Loaded " + portfolioList.size() + " portfolio images");
             }
 
@@ -140,8 +158,40 @@ public class PortfolioGalleryActivity extends AppCompatActivity {
     }
 
     private void addPortfolioItem() {
-        // TODO: Implement image picker and upload
-        Toast.makeText(this, "Image upload coming soon", Toast.LENGTH_SHORT).show();
+        imagePickerLauncher.launch("image/*");
+    }
+
+    private void uploadPortfolioImage(Uri imageUri) {
+        showLoading(true);
+        String fileName = "portfolio/" + currentUserId + "/" + System.currentTimeMillis() + ".jpg";
+        StorageReference ref = storageRef.child(fileName);
+        ref.putFile(imageUri)
+                .continueWithTask(task -> {
+                    if (!task.isSuccessful()) throw task.getException();
+                    return ref.getDownloadUrl();
+                })
+                .addOnSuccessListener(downloadUri -> {
+                    String url = downloadUri.toString();
+                    portfolioList.add(url);
+                    UserManager.getInstance()
+                            .updateField(currentUserId, "portfolioImages", new ArrayList<>(portfolioList))
+                            .addOnSuccessListener(aVoid -> {
+                                showLoading(false);
+                                portfolioAdapter.notifyItemInserted(portfolioList.size() - 1);
+                                updateEmptyState();
+                                if (tvTotalPhotos != null) tvTotalPhotos.setText(String.valueOf(portfolioList.size()));
+                                Toast.makeText(this, "Image added to portfolio", Toast.LENGTH_SHORT).show();
+                            })
+                            .addOnFailureListener(e -> {
+                                showLoading(false);
+                                portfolioList.remove(url);
+                                Toast.makeText(this, "Failed to save image", Toast.LENGTH_SHORT).show();
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    showLoading(false);
+                    Toast.makeText(this, "Upload failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
     }
 
     private void confirmDeleteImage(String imageUrl, int position) {
@@ -164,6 +214,7 @@ public class PortfolioGalleryActivity extends AppCompatActivity {
                 .updateField(currentUserId, "portfolioImages", new ArrayList<>(portfolioList))
                 .addOnSuccessListener(aVoid -> {
                     portfolioAdapter.notifyItemRemoved(position);
+                    if (tvTotalPhotos != null) tvTotalPhotos.setText(String.valueOf(portfolioList.size()));
                     Toast.makeText(this, "Image removed", Toast.LENGTH_SHORT).show();
                     updateEmptyState();
                 })

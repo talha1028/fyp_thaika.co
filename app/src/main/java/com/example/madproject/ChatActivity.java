@@ -1,6 +1,6 @@
 package com.example.madproject;
 
-import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -12,19 +12,23 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.madproject.adapters.MessageAdapter;
 import com.example.madproject.firebase.MessageManager;
 import com.example.madproject.firebase.UserManager;
+import com.google.android.material.appbar.MaterialToolbar;
 import com.example.madproject.models.Message;
 import com.example.madproject.models.User;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -42,6 +46,7 @@ public class ChatActivity extends AppCompatActivity {
     private TextView tvReceiverName;
 
     private FirebaseAuth mAuth;
+    private StorageReference storageRef;
     private String currentUserId;
     private String receiverId;
     private String chatId;
@@ -52,13 +57,18 @@ public class ChatActivity extends AppCompatActivity {
     private List<Message> messageList;
     private ListenerRegistration messageListener;
 
+    private final ActivityResultLauncher<String> attachLauncher =
+            registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
+                if (uri != null) sendImageMessage(uri);
+            });
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
 
-        // Initialize Firebase
         mAuth = FirebaseAuth.getInstance();
+        storageRef = FirebaseStorage.getInstance().getReference();
         currentUserId = mAuth.getCurrentUser() != null ? mAuth.getCurrentUser().getUid() : "";
 
         // Get receiver ID from intent
@@ -90,7 +100,7 @@ public class ChatActivity extends AppCompatActivity {
     }
 
     private void initViews() {
-        Toolbar toolbar = findViewById(R.id.toolbar);
+        MaterialToolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -128,9 +138,7 @@ public class ChatActivity extends AppCompatActivity {
     private void setupClickListeners() {
         btnSend.setOnClickListener(v -> sendMessage());
 
-        btnAttach.setOnClickListener(v -> {
-            Toast.makeText(this, "File attachment coming soon", Toast.LENGTH_SHORT).show();
-        });
+        btnAttach.setOnClickListener(v -> attachLauncher.launch("image/*"));
 
         // Enable/disable send button based on text
         etMessage.addTextChangedListener(new TextWatcher() {
@@ -233,7 +241,7 @@ public class ChatActivity extends AppCompatActivity {
         Log.d(TAG, "Loading messages for chat: " + chatId);
 
         // Use real-time listener for messages
-        MessageManager.getInstance().listenToMessages(chatId, new MessageManager.OnMessagesChangedListener() {
+        messageListener = MessageManager.getInstance().listenToMessages(chatId, new MessageManager.OnMessagesChangedListener() {
             @Override
             public void onMessagesChanged(com.google.firebase.firestore.QuerySnapshot messages) {
                 Log.d(TAG, "Messages updated: " + messages.size());
@@ -271,6 +279,36 @@ public class ChatActivity extends AppCompatActivity {
                         "Error loading messages", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private void sendImageMessage(Uri imageUri) {
+        if (currentUser == null) {
+            Toast.makeText(this, "Please wait, loading user info...", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        btnAttach.setEnabled(false);
+        String path = "chat_attachments/" + chatId + "/" + System.currentTimeMillis() + ".jpg";
+        StorageReference ref = storageRef.child(path);
+        ref.putFile(imageUri)
+                .continueWithTask(task -> {
+                    if (!task.isSuccessful()) throw task.getException();
+                    return ref.getDownloadUrl();
+                })
+                .addOnSuccessListener(downloadUri -> {
+                    btnAttach.setEnabled(true);
+                    String msgId = "msg_" + UUID.randomUUID().toString();
+                    Message msg = new Message(msgId, chatId, currentUserId,
+                            currentUser.getFullName(), receiverId,
+                            "", "image", downloadUri.toString());
+                    if (receiverUser != null) msg.setReceiverName(receiverUser.getFullName());
+                    MessageManager.getInstance().createMessage(msg);
+                })
+                .addOnFailureListener(e -> {
+                    btnAttach.setEnabled(true);
+                    Toast.makeText(this, "Image send failed: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                });
     }
 
     @Override

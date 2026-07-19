@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
 import com.example.madproject.firebase.MaterialManager;
+import com.example.madproject.helpers.GeminiAIHelper;
 import com.example.madproject.models.Material;
 import com.google.firebase.auth.FirebaseAuth;
 
@@ -21,6 +22,8 @@ public class AddMaterialActivity extends AppCompatActivity {
     private EditText etMaterialName, etQuantity, etUnitPrice, etSupplier, etDescription;
     private Spinner spinnerCategory, spinnerUnit;
     private Button btnSaveMaterial, btnCancel;
+    private android.widget.TextView btnAiSuggestMaterials;
+    private GeminiAIHelper aiHelper;
 
     private FirebaseAuth mAuth;
     private String currentUserId;
@@ -54,6 +57,7 @@ public class AddMaterialActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setTitle("");
 
         etMaterialName = findViewById(R.id.etMaterialName);
         etQuantity = findViewById(R.id.etQuantity);
@@ -64,11 +68,54 @@ public class AddMaterialActivity extends AppCompatActivity {
         spinnerUnit = findViewById(R.id.spinnerUnit);
         btnSaveMaterial = findViewById(R.id.btnSaveMaterial);
         btnCancel = findViewById(R.id.btnCancel);
+        btnAiSuggestMaterials = findViewById(R.id.btnAiSuggestMaterials);
+        aiHelper = new GeminiAIHelper(this);
     }
 
     private void setupClickListeners() {
         btnSaveMaterial.setOnClickListener(v -> saveMaterial());
         btnCancel.setOnClickListener(v -> finish());
+
+        if (btnAiSuggestMaterials != null) {
+            btnAiSuggestMaterials.setOnClickListener(v -> getAiMaterialSuggestions());
+        }
+    }
+
+    private void getAiMaterialSuggestions() {
+        String category = spinnerCategory.getSelectedItem() != null ?
+                spinnerCategory.getSelectedItem().toString() : "";
+        String projectInfo = (projectName != null && !projectName.isEmpty() ? projectName : category);
+
+        if (projectInfo.isEmpty()) {
+            Toast.makeText(this, "Select a category first", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        btnAiSuggestMaterials.setEnabled(false);
+        btnAiSuggestMaterials.setText("Suggesting...");
+
+        aiHelper.getMaterialRecommendations(projectInfo, new GeminiAIHelper.AIResponseListener() {
+            @Override
+            public void onResponse(String response) {
+                runOnUiThread(() -> {
+                    btnAiSuggestMaterials.setEnabled(true);
+                    btnAiSuggestMaterials.setText("✨ AI Suggest");
+                    new androidx.appcompat.app.AlertDialog.Builder(AddMaterialActivity.this)
+                            .setTitle("Suggested Materials")
+                            .setMessage(response.trim())
+                            .setPositiveButton("OK", null)
+                            .show();
+                });
+            }
+            @Override
+            public void onError(String error) {
+                runOnUiThread(() -> {
+                    btnAiSuggestMaterials.setEnabled(true);
+                    btnAiSuggestMaterials.setText("✨ AI Suggest");
+                    Toast.makeText(AddMaterialActivity.this, "AI error: " + error, Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
     }
 
     private void saveMaterial() {

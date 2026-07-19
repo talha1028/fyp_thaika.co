@@ -59,8 +59,8 @@ public class NotificationsActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            getSupportActionBar().setTitle("Notifications");
+            getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+            getSupportActionBar().setTitle("");
         }
 
         rvNotifications = findViewById(R.id.rvTodayNotifications);
@@ -174,19 +174,19 @@ public class NotificationsActivity extends AppCompatActivity {
                 break;
 
             case "message":
-                // TODO: Navigate to ChatActivity when implemented
-                Toast.makeText(this, "Chat activity not yet available", Toast.LENGTH_SHORT).show();
-                return;
+                intent = new Intent(this, ChatActivity.class);
+                intent.putExtra("receiverId", relatedId);
+                break;
 
             case "task":
-                // TODO: Navigate to TaskDetailActivity when implemented
-                Toast.makeText(this, "Task detail not yet available", Toast.LENGTH_SHORT).show();
-                return;
+                intent = new Intent(this, TaskDetailActivity.class);
+                intent.putExtra("taskId", relatedId);
+                break;
 
             case "payment":
-                // TODO: Navigate to payment screen when implemented
-                Toast.makeText(this, "Payment details not yet available", Toast.LENGTH_SHORT).show();
-                return;
+                intent = new Intent(this, PaymentActivity.class);
+                intent.putExtra("jobId", relatedId);
+                break;
 
             case "system":
             default:
@@ -199,12 +199,12 @@ public class NotificationsActivity extends AppCompatActivity {
     }
 
     private void showLoading(boolean show) {
+        if (progressBar != null) {
+            progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
+        }
         if (show) {
-            progressBar.setVisibility(View.VISIBLE);
             rvNotifications.setVisibility(View.GONE);
-            emptyState.setVisibility(View.GONE);
-        } else {
-            progressBar.setVisibility(View.GONE);
+            if (emptyState != null) emptyState.setVisibility(View.GONE);
         }
     }
 

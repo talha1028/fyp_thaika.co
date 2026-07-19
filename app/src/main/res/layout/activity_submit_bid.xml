@@ -131,6 +131,20 @@
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:layout_marginTop="8dp"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:id="@+id/btnAiEstimate"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:text="✨ AI Cost Estimate"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="#7C4DFF"
+                android:background="@drawable/bg_pill_unselected"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:gravity="center"
                 android:layout_marginBottom="16dp" />
 
             <!-- Estimated Completion Days -->

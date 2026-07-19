@@ -9,6 +9,7 @@ import android.widget.ImageView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.example.madproject.R;
 
 import java.util.List;
@@ -41,12 +42,12 @@ public class PortfolioAdapter extends RecyclerView.Adapter<PortfolioAdapter.Port
     public void onBindViewHolder(@NonNull PortfolioViewHolder holder, int position) {
         String imageUrl = imageUrls.get(position);
 
-        // Load image using placeholder for now
-        // TODO: Load image using Glide/Picasso
-        // Glide.with(context).load(imageUrl).into(holder.ivPortfolioImage);
-
-        // Set placeholder
-        holder.ivPortfolioImage.setImageResource(R.drawable.ic_portfolio);
+        Glide.with(context)
+                .load(imageUrl)
+                .placeholder(R.drawable.ic_portfolio)
+                .error(R.drawable.ic_portfolio)
+                .centerCrop()
+                .into(holder.ivPortfolioImage);
 
         holder.ivPortfolioImage.setOnClickListener(v -> {
             if (listener != null) {

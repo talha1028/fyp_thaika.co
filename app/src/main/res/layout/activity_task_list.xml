@@ -364,6 +364,20 @@
                     android:textColor="#212121" />
 
                 <TextView
+                    android:id="@+id/btnAiSiteReport"
+                    android:layout_width="wrap_content"
+                    android:layout_height="32dp"
+                    android:text="📊 AI Report"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="#7C4DFF"
+                    android:background="@drawable/bg_pill_unselected"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:gravity="center"
+                    android:layout_marginEnd="12dp" />
+
+                <TextView
                     android:id="@+id/btnFilters"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"

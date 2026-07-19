@@ -401,6 +401,20 @@
                     android:layout_marginStart="8dp" />
             </LinearLayout>
 
+            <TextView
+                android:id="@+id/btnAiSafetyTips"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="⚠️ AI Safety Tips"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:textColor="#FF9800"
+                android:background="@drawable/bg_pill_unselected"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:gravity="center"
+                android:layout_marginTop="12dp" />
+
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 

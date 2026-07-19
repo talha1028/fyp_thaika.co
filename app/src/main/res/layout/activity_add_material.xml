@@ -37,13 +37,34 @@
             app:layout_constraintTop_toBottomOf="@id/toolbar">
 
             <!-- Material Name -->
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Material Name *"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:textColor="#212121" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Material Name *"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="#212121" />
+
+                <TextView
+                    android:id="@+id/btnAiSuggestMaterials"
+                    android:layout_width="wrap_content"
+                    android:layout_height="28dp"
+                    android:text="✨ AI Suggest"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:textColor="#7C4DFF"
+                    android:background="@drawable/bg_pill_unselected"
+                    android:paddingStart="10dp"
+                    android:paddingEnd="10dp"
+                    android:gravity="center" />
+            </LinearLayout>
 
             <EditText
                 android:id="@+id/etMaterialName"

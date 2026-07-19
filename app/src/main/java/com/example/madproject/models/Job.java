@@ -20,9 +20,12 @@ public class Job {
     private long completedDate;
     private int totalBids;
     private String acceptedBidId;
+    private double acceptedBidAmount;
     private String assignedContractorId;
     private String assignedContractorName;
     private List<String> attachments; // Image URLs
+    private boolean depositPaid;
+    private boolean finalPaid;
 
     // Required empty constructor for Firestore
     public Job() {
@@ -174,6 +177,30 @@ public class Job {
 
     public void setAcceptedBidId(String acceptedBidId) {
         this.acceptedBidId = acceptedBidId;
+    }
+
+    public double getAcceptedBidAmount() {
+        return acceptedBidAmount;
+    }
+
+    public void setAcceptedBidAmount(double acceptedBidAmount) {
+        this.acceptedBidAmount = acceptedBidAmount;
+    }
+
+    public boolean isDepositPaid() {
+        return depositPaid;
+    }
+
+    public void setDepositPaid(boolean depositPaid) {
+        this.depositPaid = depositPaid;
+    }
+
+    public boolean isFinalPaid() {
+        return finalPaid;
+    }
+
+    public void setFinalPaid(boolean finalPaid) {
+        this.finalPaid = finalPaid;
     }
 
     public String getAssignedContractorId() {

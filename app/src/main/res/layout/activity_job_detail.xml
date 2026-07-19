@@ -265,6 +265,63 @@
                 </androidx.constraintlayout.widget.ConstraintLayout>
             </androidx.cardview.widget.CardView>
 
+            <!-- Payment Card (visible when payment due) -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/paymentCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="#F3E5FF">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:padding="16dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/tvPaymentLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Deposit Due (30%)"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:textColor="#4A148C" />
+
+                        <TextView
+                            android:id="@+id/tvPaymentAmount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Rs. 15,000"
+                            android:textSize="20sp"
+                            android:textStyle="bold"
+                            android:textColor="#7C4DFF"
+                            android:layout_marginTop="2dp" />
+                    </LinearLayout>
+
+                    <Button
+                        android:id="@+id/btnPayNow"
+                        android:layout_width="wrap_content"
+                        android:layout_height="44dp"
+                        android:text="Pay Now"
+                        android:textAllCaps="false"
+                        android:textColor="@android:color/white"
+                        android:background="@drawable/bg_button_purple"
+                        android:paddingStart="20dp"
+                        android:paddingEnd="20dp" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
             <!-- Bids Section Header -->
             <LinearLayout
                 android:layout_width="match_parent"
@@ -337,22 +394,84 @@
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <!-- Submit Bid Button (Visible for Contractors) -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnSubmitBid"
+    <!-- Bottom action buttons -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:layout_margin="16dp"
-        android:text="Submit Bid"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        android:textColor="@android:color/white"
-        android:backgroundTint="#7C4DFF"
-        android:paddingTop="14dp"
-        android:paddingBottom="14dp"
-        app:cornerRadius="12dp"
-        app:elevation="4dp"
-        android:visibility="gone" />
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnMarkComplete"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="Mark Job Complete"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/white"
+            android:backgroundTint="#4CAF50"
+            android:layout_marginBottom="8dp"
+            app:cornerRadius="12dp"
+            app:elevation="4dp"
+            android:visibility="gone" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnWriteReview"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="Rate Contractor"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textColor="#7C4DFF"
+            android:backgroundTint="@android:color/white"
+            app:strokeColor="#7C4DFF"
+            app:strokeWidth="1dp"
+            android:layout_marginBottom="8dp"
+            app:cornerRadius="12dp"
+            android:visibility="gone" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSubmitBid"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="Submit Bid"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/white"
+            android:backgroundTint="#7C4DFF"
+            app:cornerRadius="12dp"
+            app:elevation="4dp"
+            android:visibility="gone" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnGenerateContract"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="📄 Generate Contract"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/white"
+            android:backgroundTint="#7C4DFF"
+            app:cornerRadius="12dp"
+            app:elevation="4dp"
+            android:layout_marginTop="8dp"
+            android:visibility="gone" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnBudgetTips"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="💡 Budget Optimization"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/white"
+            android:backgroundTint="#FF9800"
+            app:cornerRadius="12dp"
+            app:elevation="4dp"
+            android:layout_marginTop="8dp"
+            android:visibility="gone" />
+
+    </LinearLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

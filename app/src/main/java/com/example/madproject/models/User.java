@@ -14,7 +14,10 @@ public class User {
     private String city;
     private String userType; // "client" or "contractor"
     private String profilePictureUrl;
-    private String fcmToken; // Firebase Cloud Messaging token for push notifications
+    private String fcmToken;
+    private boolean phoneVerified;
+    private boolean pushNotificationsEnabled = true;
+    private boolean messageNotificationsEnabled = true;
     private long createdAt;
     private long lastLogin;
 
@@ -126,6 +129,30 @@ public class User {
 
     public void setFcmToken(String fcmToken) {
         this.fcmToken = fcmToken;
+    }
+
+    public boolean isPhoneVerified() {
+        return phoneVerified;
+    }
+
+    public void setPhoneVerified(boolean phoneVerified) {
+        this.phoneVerified = phoneVerified;
+    }
+
+    public boolean isPushNotificationsEnabled() {
+        return pushNotificationsEnabled;
+    }
+
+    public void setPushNotificationsEnabled(boolean enabled) {
+        this.pushNotificationsEnabled = enabled;
+    }
+
+    public boolean isMessageNotificationsEnabled() {
+        return messageNotificationsEnabled;
+    }
+
+    public void setMessageNotificationsEnabled(boolean enabled) {
+        this.messageNotificationsEnabled = enabled;
     }
 
     public long getCreatedAt() {

@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -35,7 +34,6 @@ public class ClientDashboardActivity extends AppCompatActivity {
     private static final String TAG = "ClientDashboard";
 
     private TextView tvWelcome, tvUserName, tvViewAllJobs;
-    private ImageView btnNotifications;
     private RecyclerView rvMyJobs;
     private LinearLayout emptyState;
     private CardView btnPostJob, cardFindContractors;
@@ -90,7 +88,6 @@ public class ClientDashboardActivity extends AppCompatActivity {
         tvWelcome = findViewById(R.id.tvWelcome);
         tvUserName = findViewById(R.id.tvUserName);
         tvViewAllJobs = findViewById(R.id.tvViewAllJobs);
-        btnNotifications = findViewById(R.id.btnNotifications);
         rvMyJobs = findViewById(R.id.rvMyJobs);
         emptyState = findViewById(R.id.emptyState);
         btnPostJob = findViewById(R.id.btnPostJob);
@@ -104,10 +101,6 @@ public class ClientDashboardActivity extends AppCompatActivity {
 
         // Set home as selected
         bottomNavigation.setSelectedItemId(R.id.nav_home);
-        Log.d(TAG, "fabAIChat = " + fabAIChat);
-        Log.d(TAG, "btnNotifications = " + btnNotifications);
-        Log.d(TAG, "bottomNavigation = " + bottomNavigation);
-
     }
 
     private void setupRecyclerView() {
@@ -130,9 +123,14 @@ public class ClientDashboardActivity extends AppCompatActivity {
             startActivity(new Intent(ClientDashboardActivity.this, AIChatActivity.class));
         });
 
-        // Notifications Button
-        btnNotifications.setOnClickListener(v -> {
-            startActivity(new Intent(ClientDashboardActivity.this, NotificationsActivity.class));
+        // Notifications via toolbar menu
+        com.google.android.material.appbar.MaterialToolbar toolbar = findViewById(R.id.toolbar);
+        toolbar.setOnMenuItemClickListener(item -> {
+            if (item.getItemId() == R.id.action_notifications) {
+                startActivity(new Intent(ClientDashboardActivity.this, NotificationsActivity.class));
+                return true;
+            }
+            return false;
         });
 
         // Post Job Button (CardView)
@@ -166,8 +164,7 @@ public class ClientDashboardActivity extends AppCompatActivity {
                 startActivity(new Intent(ClientDashboardActivity.this, ContractorDirectoryActivity.class));
                 return true;
             } else if (id == R.id.nav_messages) {
-                // TODO: Create ConversationsListActivity to show all chats
-                Toast.makeText(this, "Access messages from contractor profiles or job details", Toast.LENGTH_LONG).show();
+                startActivity(new Intent(ClientDashboardActivity.this, ConversationsListActivity.class));
                 return true;
             } else if (id == R.id.nav_profile) {
                 startActivity(new Intent(ClientDashboardActivity.this, SettingsActivity.class));

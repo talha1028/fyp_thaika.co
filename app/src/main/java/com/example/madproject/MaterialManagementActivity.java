@@ -31,6 +31,7 @@ public class MaterialManagementActivity extends AppCompatActivity {
     private TabLayout tabLayout;
     private ProgressBar progressBar;
     private LinearLayout emptyState;
+    private android.widget.TextView tvTotalItems, tvLowStock, tvTotalValue;
 
     private FirebaseAuth mAuth;
     private String currentUserId;
@@ -78,6 +79,7 @@ public class MaterialManagementActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setTitle("");
 
         rvMaterials = findViewById(R.id.rvMaterials);
         btnRequestMaterial = findViewById(R.id.btnRequestMaterial);
@@ -96,6 +98,10 @@ public class MaterialManagementActivity extends AppCompatActivity {
             emptyState = new LinearLayout(this);
             emptyState.setVisibility(View.GONE);
         }
+
+        tvTotalItems = findViewById(R.id.tvTotalItems);
+        tvLowStock   = findViewById(R.id.tvLowStock);
+        tvTotalValue = findViewById(R.id.tvTotalValue);
 
         rvMaterials.setLayoutManager(new LinearLayoutManager(this));
     }
@@ -194,17 +200,30 @@ public class MaterialManagementActivity extends AppCompatActivity {
     private void filterMaterials() {
         filteredMaterialsList.clear();
 
+        int lowStockCount = 0;
+        double totalValue = 0;
         for (Material material : allMaterialsList) {
-            boolean matchesFilter = currentFilter.equals("all") ||
-                                  material.getStatus().equals(currentFilter);
-
-            if (matchesFilter) {
+            totalValue += material.getTotalCost();
+            if ("low_stock".equals(material.getStatus()) || "out_of_stock".equals(material.getStatus())) {
+                lowStockCount++;
+            }
+            if (currentFilter.equals("all") || material.getStatus().equals(currentFilter)) {
                 filteredMaterialsList.add(material);
             }
         }
 
+        if (tvTotalItems != null) tvTotalItems.setText(String.valueOf(allMaterialsList.size()));
+        if (tvLowStock   != null) tvLowStock.setText(String.valueOf(lowStockCount));
+        if (tvTotalValue != null) tvTotalValue.setText(formatCurrency(totalValue));
+
         materialAdapter.notifyDataSetChanged();
         updateEmptyState();
+    }
+
+    private String formatCurrency(double amount) {
+        if (amount >= 100000) return String.format("%.1f L", amount / 100000);
+        if (amount >= 1000)   return String.format("%.0fK", amount / 1000);
+        return String.format("%.0f", amount);
     }
 
     private void showLoading(boolean show) {

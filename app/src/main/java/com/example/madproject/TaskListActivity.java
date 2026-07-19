@@ -6,7 +6,12 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -15,6 +20,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.madproject.adapters.TaskAdapter;
 import com.example.madproject.firebase.TaskManager;
+import com.example.madproject.helpers.GeminiAIHelper;
 import com.example.madproject.models.Task;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.tabs.TabLayout;
@@ -32,6 +38,9 @@ public class TaskListActivity extends AppCompatActivity {
     private TabLayout tabLayout;
     private ProgressBar progressBar;
     private LinearLayout emptyState;
+    private TextView btnAiSiteReport;
+    private TextView tvProjectName, tvSelectedDate, tvNotStartedCount, tvOngoingCount, tvCompletedCount;
+    private GeminiAIHelper aiHelper;
 
     private FirebaseAuth mAuth;
     private String currentUserId;
@@ -80,6 +89,7 @@ public class TaskListActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setTitle("");
 
         rvTasks = findViewById(R.id.rvTasks);
         fabAddTask = findViewById(R.id.fabAddTask);
@@ -96,6 +106,23 @@ public class TaskListActivity extends AppCompatActivity {
         if (emptyState == null) {
             emptyState = new LinearLayout(this);
             emptyState.setVisibility(View.GONE);
+        }
+
+        btnAiSiteReport   = findViewById(R.id.btnAiSiteReport);
+        tvProjectName     = findViewById(R.id.tvProjectName);
+        tvSelectedDate    = findViewById(R.id.tvSelectedDate);
+        tvNotStartedCount = findViewById(R.id.tvNotStartedCount);
+        tvOngoingCount    = findViewById(R.id.tvOngoingCount);
+        tvCompletedCount  = findViewById(R.id.tvCompletedCount);
+        aiHelper = new GeminiAIHelper(this);
+
+        // Set project name from intent
+        if (tvProjectName != null) {
+            tvProjectName.setText(projectName != null && !projectName.isEmpty() ? projectName : "Project Tasks");
+        }
+        // Set today's date
+        if (tvSelectedDate != null) {
+            tvSelectedDate.setText(new SimpleDateFormat("dd MMM yyyy, EEE", Locale.getDefault()).format(new Date()));
         }
 
         rvTasks.setLayoutManager(new LinearLayoutManager(this));
@@ -154,6 +181,73 @@ public class TaskListActivity extends AppCompatActivity {
             intent.putExtra("projectName", projectName);
             startActivity(intent);
         });
+
+        if (btnAiSiteReport != null) {
+            btnAiSiteReport.setOnClickListener(v -> generateSiteReport());
+        }
+    }
+
+    private void generateSiteReport() {
+        if (allTasksList.isEmpty()) {
+            Toast.makeText(this, "No tasks loaded yet", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        int total = allTasksList.size();
+        int completed = 0, ongoing = 0, notStarted = 0;
+        for (Task t : allTasksList) {
+            String s = t.getStatus();
+            if ("completed".equals(s)) completed++;
+            else if ("ongoing".equals(s)) ongoing++;
+            else notStarted++;
+        }
+
+        btnAiSiteReport.setEnabled(false);
+        btnAiSiteReport.setText("Generating...");
+
+        String name = projectName != null ? projectName : "Project";
+        int finalCompleted = completed, finalOngoing = ongoing, finalNotStarted = notStarted;
+
+        aiHelper.generateProgressReport(name, total, finalCompleted, finalOngoing, finalNotStarted,
+                new GeminiAIHelper.AIResponseListener() {
+                    @Override
+                    public void onResponse(String response) {
+                        runOnUiThread(() -> {
+                            btnAiSiteReport.setEnabled(true);
+                            btnAiSiteReport.setText("📊 AI Report");
+
+                            android.widget.ScrollView sv = new android.widget.ScrollView(TaskListActivity.this);
+                            android.widget.TextView tv = new android.widget.TextView(TaskListActivity.this);
+                            tv.setText(response.trim());
+                            tv.setTextSize(13f);
+                            tv.setTextColor(0xFF212121);
+                            tv.setPadding(48, 32, 48, 32);
+                            tv.setLineSpacing(4f, 1f);
+                            sv.addView(tv);
+
+                            new androidx.appcompat.app.AlertDialog.Builder(TaskListActivity.this)
+                                    .setTitle("📊 Site Progress Report — " + name)
+                                    .setView(sv)
+                                    .setPositiveButton("Share", (d, w) -> {
+                                        Intent share = new Intent(Intent.ACTION_SEND);
+                                        share.setType("text/plain");
+                                        share.putExtra(Intent.EXTRA_SUBJECT, "Site Report — " + name);
+                                        share.putExtra(Intent.EXTRA_TEXT, response);
+                                        startActivity(Intent.createChooser(share, "Share Report"));
+                                    })
+                                    .setNegativeButton("Close", null)
+                                    .show();
+                        });
+                    }
+                    @Override
+                    public void onError(String error) {
+                        runOnUiThread(() -> {
+                            btnAiSiteReport.setEnabled(true);
+                            btnAiSiteReport.setText("📊 AI Report");
+                            Toast.makeText(TaskListActivity.this, "AI error: " + error, Toast.LENGTH_SHORT).show();
+                        });
+                    }
+                });
     }
 
     private void loadTasks() {
@@ -189,14 +283,21 @@ public class TaskListActivity extends AppCompatActivity {
     private void filterTasks() {
         filteredTasksList.clear();
 
+        int notStarted = 0, ongoing = 0, completed = 0;
         for (Task task : allTasksList) {
-            boolean matchesFilter = currentFilter.equals("all") ||
-                                  task.getStatus().equals(currentFilter);
+            String s = task.getStatus();
+            if ("completed".equals(s)) completed++;
+            else if ("ongoing".equals(s)) ongoing++;
+            else notStarted++;
 
-            if (matchesFilter) {
+            if (currentFilter.equals("all") || s.equals(currentFilter)) {
                 filteredTasksList.add(task);
             }
         }
+
+        if (tvNotStartedCount != null) tvNotStartedCount.setText(String.valueOf(notStarted));
+        if (tvOngoingCount    != null) tvOngoingCount.setText(String.valueOf(ongoing));
+        if (tvCompletedCount  != null) tvCompletedCount.setText(String.valueOf(completed));
 
         taskAdapter.notifyDataSetChanged();
         updateEmptyState();

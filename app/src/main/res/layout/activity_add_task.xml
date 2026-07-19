@@ -144,13 +144,34 @@
                 android:layout_marginBottom="16dp" />
 
             <!-- Start & End Date Row -->
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Timeline *"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:textColor="#212121" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Timeline *"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="#212121" />
+
+                <TextView
+                    android:id="@+id/btnAiTimeline"
+                    android:layout_width="wrap_content"
+                    android:layout_height="32dp"
+                    android:text="⏱ AI Estimate"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="#7C4DFF"
+                    android:background="@drawable/bg_pill_unselected"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:gravity="center" />
+            </LinearLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"

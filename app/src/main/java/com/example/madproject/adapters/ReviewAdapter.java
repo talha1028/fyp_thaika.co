@@ -9,6 +9,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.example.madproject.R;
 import com.example.madproject.models.Review;
 
@@ -57,11 +58,12 @@ public class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ReviewView
             holder.tvJobTitle.setVisibility(View.GONE);
         }
 
-        // Load reviewer profile image
-        // TODO: Load image using Glide/Picasso
-        // if (review.getClientPhotoUrl() != null) {
-        //     Glide.with(context).load(review.getClientPhotoUrl()).into(holder.ivReviewerImage);
-        // }
+        Glide.with(context)
+                .load(review.getClientPhotoUrl())
+                .placeholder(R.drawable.ic_default_profile)
+                .error(R.drawable.ic_default_profile)
+                .circleCrop()
+                .into(holder.ivReviewerImage);
     }
 
     @Override

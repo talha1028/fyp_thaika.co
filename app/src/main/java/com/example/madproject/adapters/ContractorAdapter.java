@@ -10,6 +10,7 @@ import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.example.madproject.R;
 import com.example.madproject.models.User;
 
@@ -99,10 +100,12 @@ public class ContractorAdapter extends RecyclerView.Adapter<ContractorAdapter.Co
             }
         });
 
-        // TODO: Load profile image using Glide/Picasso
-        // if (contractor.getProfilePictureUrl() != null) {
-        //     Glide.with(context).load(contractor.getProfilePictureUrl()).into(holder.ivContractorImage);
-        // }
+        Glide.with(context)
+                .load(contractor.getProfilePictureUrl())
+                .placeholder(R.drawable.ic_default_profile)
+                .error(R.drawable.ic_default_profile)
+                .circleCrop()
+                .into(holder.ivContractorImage);
     }
 
     @Override

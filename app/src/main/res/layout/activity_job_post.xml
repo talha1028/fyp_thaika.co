@@ -98,7 +98,55 @@
                 android:inputType="textMultiLine"
                 android:textSize="14sp"
                 android:layout_marginTop="8dp"
-                android:layout_marginBottom="16dp" />
+                android:layout_marginBottom="4dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:id="@+id/btnAiGenerateDesc"
+                    android:layout_width="wrap_content"
+                    android:layout_height="32dp"
+                    android:text="✨ AI Generate"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="#7C4DFF"
+                    android:background="@drawable/bg_pill_unselected"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:gravity="center"
+                    android:layout_marginEnd="8dp" />
+
+                <TextView
+                    android:id="@+id/btnAiContractorTip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="32dp"
+                    android:text="🔍 Contractor Advice"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="#7C4DFF"
+                    android:background="@drawable/bg_pill_unselected"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:gravity="center"
+                    android:layout_marginEnd="8dp" />
+
+                <TextView
+                    android:id="@+id/btnAiPermitCheck"
+                    android:layout_width="wrap_content"
+                    android:layout_height="32dp"
+                    android:text="📋 Permit Check"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="#FF9800"
+                    android:background="@drawable/bg_pill_unselected"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:gravity="center" />
+            </LinearLayout>
 
             <!-- Budget -->
             <TextView

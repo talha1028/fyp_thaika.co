@@ -8,11 +8,12 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+
+import androidx.cardview.widget.CardView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -20,6 +21,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.madproject.adapters.PortfolioAdapter;
 import com.example.madproject.adapters.ReviewAdapter;
 import com.example.madproject.firebase.ReviewManager;
+import com.google.android.material.appbar.MaterialToolbar;
 import com.example.madproject.firebase.UserManager;
 import com.example.madproject.models.Review;
 import com.example.madproject.models.User;
@@ -29,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import com.bumptech.glide.Glide;
 import de.hdodenhof.circleimageview.CircleImageView;
 
 public class ContractorProfileActivity extends AppCompatActivity {
@@ -42,7 +45,7 @@ public class ContractorProfileActivity extends AppCompatActivity {
     private RecyclerView rvPortfolio, rvReviews;
     private Button btnCall, btnMessage;
     private ProgressBar progressBar;
-    private LinearLayout portfolioSection, reviewsSection;
+    private CardView portfolioSection, reviewsSection;
 
     private String contractorId;
     private User contractor;
@@ -73,11 +76,11 @@ public class ContractorProfileActivity extends AppCompatActivity {
     }
 
     private void initViews() {
-        Toolbar toolbar = findViewById(R.id.toolbar);
+        MaterialToolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            getSupportActionBar().setTitle("Contractor Profile");
+            getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+            getSupportActionBar().setTitle("");
         }
 
         ivProfileImage = findViewById(R.id.ivProfileImage);
@@ -90,6 +93,9 @@ public class ContractorProfileActivity extends AppCompatActivity {
         tvCompletedProjects = findViewById(R.id.tvCompletedProjects);
         tvTotalReviews = findViewById(R.id.tvTotalReviews);
         tvLocation = findViewById(R.id.tvLocation);
+
+        android.widget.TextView tvResponseTime = findViewById(R.id.tvResponseTime);
+        if (tvResponseTime != null) tvResponseTime.setText("< 1 hr");
         tvViewAllPortfolio = findViewById(R.id.tvViewAllPortfolio);
         tvViewAllReviews = findViewById(R.id.tvViewAllReviews);
         btnCall = findViewById(R.id.btnCall);
@@ -193,8 +199,16 @@ public class ContractorProfileActivity extends AppCompatActivity {
     }
 
     private void displayProfile(User user) {
+        if (user == null) {
+            Toast.makeText(this, "Error: User data is null", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
         // Set name
-        tvName.setText(user.getFullName());
+        if (tvName != null && user.getFullName() != null) {
+            tvName.setText(user.getFullName());
+        }
 
         // Set category
         if (user.getCategory() != null && !user.getCategory().isEmpty()) {
@@ -276,10 +290,12 @@ public class ContractorProfileActivity extends AppCompatActivity {
             if (portfolioSection != null) portfolioSection.setVisibility(View.GONE);
         }
 
-        // TODO: Load profile image using Glide/Picasso
-        // if (user.getProfilePictureUrl() != null) {
-        //     Glide.with(this).load(user.getProfilePictureUrl()).into(ivProfileImage);
-        // }
+        Glide.with(this)
+                .load(user.getProfilePictureUrl())
+                .placeholder(R.drawable.ic_default_profile)
+                .error(R.drawable.ic_default_profile)
+                .circleCrop()
+                .into(ivProfileImage);
     }
 
     private void loadReviews() {

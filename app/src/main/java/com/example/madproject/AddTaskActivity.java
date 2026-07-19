@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
 import com.example.madproject.firebase.TaskManager;
+import com.example.madproject.helpers.GeminiAIHelper;
 import com.example.madproject.models.Task;
 import com.google.firebase.auth.FirebaseAuth;
 
@@ -21,6 +22,8 @@ public class AddTaskActivity extends AppCompatActivity {
     private EditText etTaskTitle, etWorkersCount, etTaskDescription, etEstimatedQuantity, etDailyWages;
     private Spinner spinnerProgressUnit;
     private Button btnCreateTask, btnCancel;
+    private android.widget.TextView btnAiTimeline;
+    private GeminiAIHelper aiHelper;
 
     private FirebaseAuth mAuth;
     private String currentUserId;
@@ -54,6 +57,7 @@ public class AddTaskActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setTitle("");
 
         etTaskTitle = findViewById(R.id.etTaskTitle);
         etWorkersCount = findViewById(R.id.etWorkersCount);
@@ -63,11 +67,62 @@ public class AddTaskActivity extends AppCompatActivity {
         spinnerProgressUnit = findViewById(R.id.spinnerProgressUnit);
         btnCreateTask = findViewById(R.id.btnCreateTask);
         btnCancel = findViewById(R.id.btnCancel);
+        btnAiTimeline = findViewById(R.id.btnAiTimeline);
+        aiHelper = new GeminiAIHelper(this);
     }
 
     private void setupClickListeners() {
         btnCreateTask.setOnClickListener(v -> createTask());
         btnCancel.setOnClickListener(v -> finish());
+
+        if (btnAiTimeline != null) {
+            btnAiTimeline.setOnClickListener(v -> getAiTimelineEstimate());
+        }
+    }
+
+    private void getAiTimelineEstimate() {
+        String title = etTaskTitle.getText().toString().trim();
+        String desc = etTaskDescription.getText().toString().trim();
+        String workers = etWorkersCount.getText().toString().trim();
+        String qty = etEstimatedQuantity.getText().toString().trim();
+        String unit = spinnerProgressUnit.getSelectedItem() != null ?
+                spinnerProgressUnit.getSelectedItem().toString() : "";
+
+        if (title.isEmpty()) {
+            Toast.makeText(this, "Enter task title first", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String projectInfo = title;
+        if (!desc.isEmpty()) projectInfo += ". " + desc;
+        if (!workers.isEmpty()) projectInfo += ". Workers: " + workers;
+        if (!qty.isEmpty() && !unit.isEmpty()) projectInfo += ". Quantity: " + qty + " " + unit;
+
+        btnAiTimeline.setEnabled(false);
+        btnAiTimeline.setText("Estimating...");
+
+        aiHelper.getTimelineEstimate(projectInfo, new GeminiAIHelper.AIResponseListener() {
+            @Override
+            public void onResponse(String response) {
+                runOnUiThread(() -> {
+                    btnAiTimeline.setEnabled(true);
+                    btnAiTimeline.setText("⏱ AI Estimate");
+                    new androidx.appcompat.app.AlertDialog.Builder(AddTaskActivity.this)
+                            .setTitle("Timeline Estimate")
+                            .setMessage(response.trim())
+                            .setPositiveButton("OK", null)
+                            .show();
+                });
+            }
+            @Override
+            public void onError(String error) {
+                runOnUiThread(() -> {
+                    btnAiTimeline.setEnabled(true);
+                    btnAiTimeline.setText("⏱ AI Estimate");
+                    Toast.makeText(AddTaskActivity.this, "AI error: " + error, Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
     }
 
     private void createTask() {

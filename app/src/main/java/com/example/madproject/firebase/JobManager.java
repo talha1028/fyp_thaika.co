@@ -116,13 +116,15 @@ public class JobManager {
     }
 
     // UPDATE - Assign contractor to job
-    public Task<Void> assignContractor(String jobId, String contractorId, String contractorName, String bidId) {
+    public Task<Void> assignContractor(String jobId, String contractorId, String contractorName,
+                                       String bidId, double bidAmount) {
         return db.collection(COLLECTION_NAME)
                 .document(jobId)
                 .update(
                         "assignedContractorId", contractorId,
                         "assignedContractorName", contractorName,
                         "acceptedBidId", bidId,
+                        "acceptedBidAmount", bidAmount,
                         "status", "in_progress",
                         "startDate", System.currentTimeMillis()
                 );

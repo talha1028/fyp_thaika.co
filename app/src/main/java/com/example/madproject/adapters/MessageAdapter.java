@@ -11,6 +11,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.example.madproject.R;
 import com.example.madproject.models.Message;
 import com.google.firebase.auth.FirebaseAuth;
@@ -57,8 +58,12 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
         if (message.getMessageType().equals("image") && message.getAttachmentUrl() != null) {
             // Show image message
             holder.imageMessageLayout.setVisibility(View.VISIBLE);
-            // TODO: Load image using Glide/Picasso
-            // Glide.with(context).load(message.getAttachmentUrl()).into(holder.ivMessageImage);
+            Glide.with(context)
+                    .load(message.getAttachmentUrl())
+                    .placeholder(R.drawable.ic_gallery)
+                    .error(R.drawable.ic_gallery)
+                    .centerCrop()
+                    .into(holder.ivMessageImage);
             if (message.getMessageText() != null && !message.getMessageText().isEmpty()) {
                 holder.tvImageCaption.setVisibility(View.VISIBLE);
                 holder.tvImageCaption.setText(message.getMessageText());
@@ -87,11 +92,12 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
             holder.tvReceivedMessage.setText(message.getMessageText());
             holder.tvReceivedTime.setText(timeText);
 
-            // Load sender profile picture
-            // TODO: Load sender image using Glide/Picasso
-            // if (message.getSenderPhotoUrl() != null) {
-            //     Glide.with(context).load(message.getSenderPhotoUrl()).into(holder.ivSenderImage);
-            // }
+            Glide.with(context)
+                    .load(message.getSenderPhotoUrl())
+                    .placeholder(R.drawable.ic_default_profile)
+                    .error(R.drawable.ic_default_profile)
+                    .circleCrop()
+                    .into(holder.ivSenderImage);
         }
     }
 
