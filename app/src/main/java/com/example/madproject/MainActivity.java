@@ -5,12 +5,16 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.core.graphics.Insets;
+import androidx.core.view.OneShotPreDrawListener;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.madproject.firebase.UserManager;
@@ -22,7 +26,6 @@ public class MainActivity extends AppCompatActivity {
     private EditText email, password;
     private Button btnLogin;
     private TextView btnCreate, forgotPassword;
-    private ImageView btnClose;
     private ProgressBar progressBar;
     private FirebaseAuth auth;
 
@@ -32,12 +35,41 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
+        // Keep the form clear of the status bar, navigation bar and soft keyboard
+        View formScroll = findViewById(R.id.formScroll);
+        ViewCompat.setOnApplyWindowInsetsListener(formScroll, (v, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+            v.setPadding(0, bars.top, 0, Math.max(bars.bottom, ime.bottom));
+            if (ime.bottom > 0) {
+                // The viewport just shrank. Wait for layout, then scroll the focused
+                // field back above the keyboard if the keyboard now covers it.
+                OneShotPreDrawListener.add(v, () -> {
+                    View focused = getCurrentFocus();
+                    if (focused == null || !(v instanceof ScrollView)) {
+                        return;
+                    }
+                    ScrollView sv = (ScrollView) v;
+                    int[] svXY = new int[2];
+                    int[] focusedXY = new int[2];
+                    sv.getLocationOnScreen(svXY);
+                    focused.getLocationOnScreen(focusedXY);
+                    int gap = (int) (16 * getResources().getDisplayMetrics().density);
+                    int visibleBottom = svXY[1] + sv.getHeight() - sv.getPaddingBottom();
+                    int delta = (focusedXY[1] + focused.getHeight() + gap) - visibleBottom;
+                    if (delta > 0) {
+                        sv.smoothScrollBy(0, delta);
+                    }
+                });
+            }
+            return insets;
+        });
+
         // Initialize views
         email = findViewById(R.id.email);
         password = findViewById(R.id.password);
         btnCreate = findViewById(R.id.createbtn);
         btnLogin = findViewById(R.id.loginbtn);
-        btnClose = findViewById(R.id.btnClose);
         forgotPassword = findViewById(R.id.forgotPassword);
         progressBar = findViewById(R.id.progressBar);
 
@@ -52,7 +84,6 @@ public class MainActivity extends AppCompatActivity {
         // Setup click listeners
         btnCreate.setOnClickListener(v -> createAccount());
         btnLogin.setOnClickListener(v -> loginUser());
-        btnClose.setOnClickListener(v -> finish());
         forgotPassword.setOnClickListener(v -> handleForgotPassword());
     }
 
