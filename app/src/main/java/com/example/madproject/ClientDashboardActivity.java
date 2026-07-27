@@ -20,6 +20,7 @@ import com.example.madproject.firebase.UserManager;
 import com.example.madproject.helpers.FCMHelper;
 import com.example.madproject.models.Job;
 import com.example.madproject.models.User;
+import com.example.madproject.views.ShimmerLayout;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
@@ -34,6 +35,7 @@ public class ClientDashboardActivity extends AppCompatActivity {
     private static final String TAG = "ClientDashboard";
 
     private TextView tvWelcome, tvUserName, tvViewAllJobs;
+    private ShimmerLayout shimmerWelcome;
     private RecyclerView rvMyJobs;
     private LinearLayout emptyState;
     private CardView btnPostJob, cardFindContractors;
@@ -94,6 +96,7 @@ public class ClientDashboardActivity extends AppCompatActivity {
         cardFindContractors = findViewById(R.id.cardFindContractors);
         bottomNavigation = findViewById(R.id.bottomNavigation);
         fabAIChat = findViewById(R.id.fabAIChat);
+        shimmerWelcome = findViewById(R.id.shimmerWelcome);
 
         // Create ProgressBar programmatically if not in XML
         progressBar = new ProgressBar(this);
@@ -197,6 +200,9 @@ public class ClientDashboardActivity extends AppCompatActivity {
                     @Override
                     public void onError(String error) {
                         Log.e(TAG, "Error loading user: " + error);
+                        // Never leave the skeleton shimmering forever on failure
+                        clearSkeleton(tvWelcome, tvUserName);
+                        shimmerWelcome.hideShimmer();
                         Toast.makeText(ClientDashboardActivity.this,
                                 "Error loading user data: " + error,
                                 Toast.LENGTH_SHORT).show();
@@ -212,7 +218,19 @@ public class ClientDashboardActivity extends AppCompatActivity {
             // Update welcome message based on time
             tvWelcome.setText(getGreeting());
 
+            clearSkeleton(tvWelcome, tvUserName);
+            shimmerWelcome.hideShimmer();
+
             Log.d(TAG, "UI updated with user: " + user.getFullName());
+        }
+    }
+
+    /** Drop the grey placeholder bars once a field has its real value. */
+    private void clearSkeleton(TextView... views) {
+        for (TextView v : views) {
+            v.setBackground(null);
+            v.setMinWidth(0);
+            v.setMinHeight(0);
         }
     }
 

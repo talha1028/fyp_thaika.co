@@ -20,6 +20,7 @@ import com.example.madproject.firebase.UserManager;
 import com.example.madproject.helpers.FCMHelper;
 import com.example.madproject.models.Job;
 import com.example.madproject.models.User;
+import com.example.madproject.views.ShimmerLayout;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
@@ -38,6 +39,7 @@ public class ContractorDashboardActivity extends AppCompatActivity {
     private TextView tvContractorName, tvCategory, tvRating, tvReviews;
     private TextView tvActiveProjectsCount, tvCompletedCount, tvTotalEarnings;
     private TextView tvViewAllJobs;
+    private ShimmerLayout shimmerProfile, shimmerStats;
     private CircleImageView ivProfileImage;
     private Button btnViewProfile;
     private RecyclerView rvAvailableJobs;
@@ -104,6 +106,8 @@ public class ContractorDashboardActivity extends AppCompatActivity {
         emptyState = findViewById(R.id.emptyState);
         bottomNav = findViewById(R.id.bottomNav);
         fabAIChat = findViewById(R.id.fabAIChat);
+        shimmerProfile = findViewById(R.id.shimmerProfile);
+        shimmerStats = findViewById(R.id.shimmerStats);
 
         // Create ProgressBar programmatically
         progressBar = new ProgressBar(this);
@@ -202,6 +206,10 @@ public class ContractorDashboardActivity extends AppCompatActivity {
                     @Override
                     public void onError(String error) {
                         Log.e(TAG, "Error loading contractor: " + error);
+                        // Never leave the skeleton shimmering forever on failure
+                        clearSkeleton(tvContractorName, tvCategory, tvRating, tvReviews);
+                        shimmerProfile.hideShimmer();
+                        finishStatsSkeleton();
                         Toast.makeText(ContractorDashboardActivity.this,
                                 "Error loading contractor data: " + error,
                                 Toast.LENGTH_SHORT).show();
@@ -231,6 +239,9 @@ public class ContractorDashboardActivity extends AppCompatActivity {
             // Update reviews count
             tvReviews.setText("(" + user.getTotalReviews() + " reviews)");
 
+            clearSkeleton(tvContractorName, tvCategory, tvRating, tvReviews);
+            shimmerProfile.hideShimmer();
+
             // Update statistics
             // Active projects (jobs in progress assigned to this contractor)
             loadActiveProjectsCount();
@@ -250,6 +261,20 @@ public class ContractorDashboardActivity extends AppCompatActivity {
         }
     }
 
+    /** Drop the grey placeholder bars once a field has its real value. */
+    private void clearSkeleton(TextView... views) {
+        for (TextView v : views) {
+            v.setBackground(null);
+            v.setMinWidth(0);
+            v.setMinHeight(0);
+        }
+    }
+
+    private void finishStatsSkeleton() {
+        clearSkeleton(tvActiveProjectsCount, tvCompletedCount, tvTotalEarnings);
+        shimmerStats.hideShimmer();
+    }
+
     private void loadActiveProjectsCount() {
         // Count jobs assigned to this contractor with status "in_progress"
         JobManager.getInstance()
@@ -263,11 +288,13 @@ public class ContractorDashboardActivity extends AppCompatActivity {
                         }
                     }
                     tvActiveProjectsCount.setText(String.valueOf(activeCount));
+                    finishStatsSkeleton();
                     Log.d(TAG, "Active projects count: " + activeCount);
                 })
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "Error loading active projects: " + e.getMessage());
                     tvActiveProjectsCount.setText("0");
+                    finishStatsSkeleton();
                 });
     }
 

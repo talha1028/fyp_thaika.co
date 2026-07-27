@@ -49,6 +49,11 @@
                 app:cardCornerRadius="16dp"
                 app:cardElevation="2dp">
 
+                <com.example.madproject.views.ShimmerLayout
+                    android:id="@+id/shimmerProfile"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
                 <androidx.constraintlayout.widget.ConstraintLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -70,7 +75,9 @@
                         android:id="@+id/tvContractorName"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:text="Ahmad Ali"
+                        android:background="@drawable/bg_skeleton"
+                        android:minHeight="24dp"
+                        tools:text="Ahmad Ali"
                         android:textSize="18sp"
                         android:textStyle="bold"
                         android:textColor="#212121"
@@ -84,7 +91,9 @@
                         android:id="@+id/tvCategory"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:text="Electrician"
+                        android:background="@drawable/bg_skeleton"
+                        android:minHeight="20dp"
+                        tools:text="Electrician"
                         android:textSize="14sp"
                         android:textColor="#7C4DFF"
                         android:layout_marginStart="16dp"
@@ -114,7 +123,10 @@
                             android:id="@+id/tvRating"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="4.8"
+                            android:background="@drawable/bg_skeleton"
+                            android:minWidth="32dp"
+                            android:minHeight="20dp"
+                            tools:text="4.8"
                             android:textSize="14sp"
                             android:textStyle="bold"
                             android:textColor="#212121"
@@ -124,7 +136,10 @@
                             android:id="@+id/tvReviews"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="(24 reviews)"
+                            android:background="@drawable/bg_skeleton"
+                            android:minWidth="80dp"
+                            android:minHeight="18dp"
+                            tools:text="(24 reviews)"
                             android:textSize="12sp"
                             android:textColor="#757575"
                             android:layout_marginStart="4dp" />
@@ -143,21 +158,28 @@
                         app:layout_constraintTop_toBottomOf="@id/ivProfileImage"
                         app:layout_constraintEnd_toEndOf="parent" />
                 </androidx.constraintlayout.widget.ConstraintLayout>
+
+                </com.example.madproject.views.ShimmerLayout>
             </androidx.cardview.widget.CardView>
 
             <!-- Statistics Cards -->
+            <com.example.madproject.views.ShimmerLayout
+                android:id="@+id/shimmerStats"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp">
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:weightSum="3"
-                android:layout_marginBottom="16dp">
+                android:weightSum="3">
 
                 <!-- Active Projects -->
                 <androidx.cardview.widget.CardView
                     android:id="@+id/tvActiveProjects"
                     android:layout_width="0dp"
-                    android:layout_height="100dp"
+                    android:layout_height="match_parent"
                     android:layout_weight="1"
                     android:layout_marginEnd="8dp"
                     app:cardCornerRadius="12dp"
@@ -165,7 +187,9 @@
 
                     <LinearLayout
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:minHeight="100dp"
                         android:orientation="vertical"
                         android:gravity="center"
                         android:padding="12dp">
@@ -174,7 +198,10 @@
                             android:id="@+id/tvActiveProjectsCount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="3"
+                            android:background="@drawable/bg_skeleton"
+                            android:minWidth="48dp"
+                            android:minHeight="36dp"
+                            tools:text="3"
                             android:textSize="28sp"
                             android:textStyle="bold"
                             android:textColor="#7C4DFF" />
@@ -192,7 +219,7 @@
                 <!-- Completed Projects -->
                 <androidx.cardview.widget.CardView
                     android:layout_width="0dp"
-                    android:layout_height="100dp"
+                    android:layout_height="match_parent"
                     android:layout_weight="1"
                     android:layout_marginStart="4dp"
                     android:layout_marginEnd="4dp"
@@ -201,7 +228,9 @@
 
                     <LinearLayout
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:minHeight="100dp"
                         android:orientation="vertical"
                         android:gravity="center"
                         android:padding="12dp">
@@ -210,7 +239,10 @@
                             android:id="@+id/tvCompletedCount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="15"
+                            android:background="@drawable/bg_skeleton"
+                            android:minWidth="48dp"
+                            android:minHeight="36dp"
+                            tools:text="15"
                             android:textSize="28sp"
                             android:textStyle="bold"
                             android:textColor="#4CAF50" />
@@ -228,7 +260,7 @@
                 <!-- Total Earnings -->
                 <androidx.cardview.widget.CardView
                     android:layout_width="0dp"
-                    android:layout_height="100dp"
+                    android:layout_height="match_parent"
                     android:layout_weight="1"
                     android:layout_marginStart="8dp"
                     app:cardCornerRadius="12dp"
@@ -236,7 +268,9 @@
 
                     <LinearLayout
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:minHeight="100dp"
                         android:orientation="vertical"
                         android:gravity="center"
                         android:padding="12dp">
@@ -245,7 +279,10 @@
                             android:id="@+id/tvTotalEarnings"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="250K"
+                            android:background="@drawable/bg_skeleton"
+                            android:minWidth="80dp"
+                            android:minHeight="32dp"
+                            tools:text="250K"
                             android:textSize="24sp"
                             android:textStyle="bold"
                             android:textColor="#FFA726" />
@@ -260,6 +297,8 @@
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
             </LinearLayout>
+
+            </com.example.madproject.views.ShimmerLayout>
 
             <!-- Available Jobs Section -->
             <LinearLayout
