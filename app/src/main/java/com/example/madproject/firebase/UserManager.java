@@ -3,6 +3,7 @@ package com.example.madproject.firebase;
 import com.example.madproject.models.User;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
@@ -128,6 +129,18 @@ public class UserManager {
                         }
                     }
                 });
+    }
+
+    // UPDATE - Record a completed job: atomically bumps completedProjects and
+    // adds to totalEarnings, so concurrent completions can't clobber each other
+    // (unlike incrementCompletedProjects, which does a read-then-write).
+    public Task<Void> recordCompletedJob(String contractorId, double earningsAmount) {
+        return db.collection(COLLECTION_NAME)
+                .document(contractorId)
+                .update(
+                        "completedProjects", FieldValue.increment(1),
+                        "totalEarnings", FieldValue.increment(earningsAmount)
+                );
     }
 
     // DELETE - Delete user

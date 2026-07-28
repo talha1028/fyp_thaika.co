@@ -29,6 +29,7 @@ public class User {
     private double rating;
     private int totalReviews;
     private int completedProjects;
+    private double totalEarnings;
     private List<String> portfolioImages; // URLs of portfolio images
 
     // Client-specific fields (null for contractors)
@@ -53,6 +54,7 @@ public class User {
         this.rating = 0.0;
         this.totalReviews = 0;
         this.completedProjects = 0;
+        this.totalEarnings = 0.0;
         this.activeJobs = 0;
         this.completedJobs = 0;
         this.totalSpent = 0.0;
@@ -225,6 +227,14 @@ public class User {
 
     public void setCompletedProjects(int completedProjects) {
         this.completedProjects = completedProjects;
+    }
+
+    public double getTotalEarnings() {
+        return totalEarnings;
+    }
+
+    public void setTotalEarnings(double totalEarnings) {
+        this.totalEarnings = totalEarnings;
     }
 
     public List<String> getPortfolioImages() {

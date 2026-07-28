@@ -14,8 +14,10 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.cardview.widget.CardView;
 
 import com.example.madproject.firebase.JobManager;
+import com.example.madproject.firebase.NotificationManager;
 import com.example.madproject.firebase.PaymentManager;
 import com.example.madproject.models.Job;
+import com.example.madproject.models.Notification;
 import com.example.madproject.models.Payment;
 import com.google.firebase.auth.FirebaseAuth;
 
@@ -272,6 +274,18 @@ public class PaymentActivity extends AppCompatActivity {
                     JobManager.getInstance()
                             .updateField(jobId, field, true)
                             .addOnSuccessListener(aVoid2 -> {
+                                // Prompt the contractor to verify they actually received it
+                                if (currentJob.getAssignedContractorId() != null) {
+                                    String notifId = "notif_" + System.currentTimeMillis();
+                                    String label = finalPaymentType.equals("deposit") ? "deposit" : "final payment";
+                                    Notification notif = new Notification(notifId,
+                                            currentJob.getAssignedContractorId(),
+                                            "Payment Submitted",
+                                            "Client submitted " + label + " of " + formatRs(amount)
+                                                    + " for \"" + currentJob.getTitle() + "\". Please verify receipt.",
+                                            "job", jobId);
+                                    NotificationManager.getInstance().createNotification(notif);
+                                }
                                 showSuccess(finalPaymentType, amount, selectedMethod);
                             })
                             .addOnFailureListener(e -> {

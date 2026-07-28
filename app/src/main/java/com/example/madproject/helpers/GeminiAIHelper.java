@@ -21,7 +21,7 @@ public class GeminiAIHelper {
     private static final String TAG = "GeminiAI";
 
     private static final String SYSTEM_CONTEXT =
-            "You are an AI assistant for RebuildPak, a construction marketplace in Pakistan. " +
+            "You are an AI assistant for Thaika.co, a construction marketplace in Pakistan. " +
             "Help with: cost estimates (PKR), timelines, materials, safety, contractor advice, job descriptions. " +
             "Be concise (2-3 paragraphs max), use simple language, always use PKR for costs, " +
             "consider Pakistani standards and local material prices.";
@@ -33,10 +33,17 @@ public class GeminiAIHelper {
 
     public GeminiAIHelper(Context context) {
         this.executor = Executors.newSingleThreadExecutor();
-        GenerativeModel gm = new GenerativeModel("gemini-2.0-flash-lite", BuildConfig.GEMINI_API_KEY);
+        GenerativeModel gm = new GenerativeModel("gemini-3.1-flash-lite", BuildConfig.GEMINI_API_KEY);
         this.modelFutures = GenerativeModelFutures.from(gm);
         resetConversation();
         Log.d(TAG, "GeminiAI initialized");
+    }
+
+    // Test-only: injects a mock GenerativeModelFutures, bypassing the real SDK/network.
+    GeminiAIHelper(GenerativeModelFutures modelFutures) {
+        this.executor = Runnable::run;
+        this.modelFutures = modelFutures;
+        resetConversation();
     }
 
     /** Multi-turn chat — maintains conversation history across calls. */

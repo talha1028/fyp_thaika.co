@@ -26,6 +26,7 @@ public class Job {
     private List<String> attachments; // Image URLs
     private boolean depositPaid;
     private boolean finalPaid;
+    private boolean paymentVerified; // contractor confirms they received the deposit
 
     // Required empty constructor for Firestore
     public Job() {
@@ -201,6 +202,14 @@ public class Job {
 
     public void setFinalPaid(boolean finalPaid) {
         this.finalPaid = finalPaid;
+    }
+
+    public boolean isPaymentVerified() {
+        return paymentVerified;
+    }
+
+    public void setPaymentVerified(boolean paymentVerified) {
+        this.paymentVerified = paymentVerified;
     }
 
     public String getAssignedContractorId() {

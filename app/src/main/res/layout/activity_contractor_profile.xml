@@ -159,7 +159,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
-                        android:weightSum="3"
+                        android:weightSum="4"
                         android:layout_marginTop="20dp"
                         android:padding="12dp"
                         android:background="#F5F5F5"
@@ -186,6 +186,32 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Projects"
+                                android:textSize="12sp"
+                                android:textColor="#757575"
+                                android:layout_marginTop="2dp" />
+                        </LinearLayout>
+
+                        <!-- Total Earnings -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:gravity="center">
+
+                            <TextView
+                                android:id="@+id/tvEarnings"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Rs. 0"
+                                android:textSize="20sp"
+                                android:textStyle="bold"
+                                android:textColor="#2E7D32" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Earned"
                                 android:textSize="12sp"
                                 android:textColor="#757575"
                                 android:layout_marginTop="2dp" />

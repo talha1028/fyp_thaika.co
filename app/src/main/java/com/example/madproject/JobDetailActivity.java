@@ -54,6 +54,7 @@ public class JobDetailActivity extends AppCompatActivity {
 
     // Mark complete / review
     private Button btnMarkComplete;
+    private Button btnVerifyPayment;
     private Button btnWriteReview;
     private Button btnGenerateContract;
     private Button btnBudgetTips;
@@ -134,6 +135,7 @@ public class JobDetailActivity extends AppCompatActivity {
         tvPaymentAmount = findViewById(R.id.tvPaymentAmount);
         btnPayNow       = findViewById(R.id.btnPayNow);
         btnMarkComplete     = findViewById(R.id.btnMarkComplete);
+        btnVerifyPayment    = findViewById(R.id.btnVerifyPayment);
         btnWriteReview      = findViewById(R.id.btnWriteReview);
         btnGenerateContract = findViewById(R.id.btnGenerateContract);
         btnBudgetTips       = findViewById(R.id.btnBudgetTips);
@@ -273,13 +275,16 @@ public class JobDetailActivity extends AppCompatActivity {
             if (btnSubmitBid != null) btnSubmitBid.setVisibility(View.GONE);
             updatePaymentCard(job);
 
-            // Mark complete: visible when in_progress and both payments handled or no bid amount
+            // Mark complete: visible when in_progress and the contractor has verified
+            // receiving the deposit (or there's no bid amount to collect at all)
             boolean canComplete = "in_progress".equals(status) &&
-                    (job.getAcceptedBidAmount() == 0 || job.isDepositPaid());
+                    (job.getAcceptedBidAmount() == 0 || job.isPaymentVerified());
             if (btnMarkComplete != null) {
                 btnMarkComplete.setVisibility(canComplete ? View.VISIBLE : View.GONE);
                 btnMarkComplete.setOnClickListener(v -> showMarkCompleteDialog());
             }
+
+            if (btnVerifyPayment != null) btnVerifyPayment.setVisibility(View.GONE);
 
             // Write review: visible when completed, contractor assigned, and not yet reviewed
             if (btnWriteReview != null) {
@@ -312,7 +317,43 @@ public class JobDetailActivity extends AppCompatActivity {
             if (btnWriteReview != null) btnWriteReview.setVisibility(View.GONE);
             if (btnGenerateContract != null) btnGenerateContract.setVisibility(View.GONE);
             if (btnBudgetTips != null) btnBudgetTips.setVisibility(View.GONE);
+
+            // Verify payment: visible to the assigned contractor once the client has
+            // paid the deposit but before the contractor has confirmed receiving it.
+            if (btnVerifyPayment != null) {
+                boolean isAssignedContractor = currentUserId.equals(job.getAssignedContractorId());
+                boolean needsVerification = "in_progress".equals(status)
+                        && job.isDepositPaid() && !job.isPaymentVerified();
+                btnVerifyPayment.setVisibility(
+                        isAssignedContractor && needsVerification ? View.VISIBLE : View.GONE);
+                btnVerifyPayment.setOnClickListener(v -> verifyPaymentReceived());
+            }
         }
+    }
+
+    private void verifyPaymentReceived() {
+        if (currentJob == null) return;
+        showLoading(true);
+        JobManager.getInstance()
+                .updateField(jobId, "paymentVerified", true)
+                .addOnSuccessListener(aVoid -> {
+                    showLoading(false);
+                    Toast.makeText(this, "Payment verified!", Toast.LENGTH_SHORT).show();
+
+                    String notifId = "notif_" + System.currentTimeMillis();
+                    Notification notif = new Notification(notifId,
+                            currentJob.getClientId(),
+                            "Payment Verified",
+                            "The contractor confirmed receiving your deposit for \"" + currentJob.getTitle() + "\".",
+                            "job", jobId);
+                    NotificationManager.getInstance().createNotification(notif);
+
+                    loadJobDetails();
+                })
+                .addOnFailureListener(e -> {
+                    showLoading(false);
+                    Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
     }
 
     private void updatePaymentCard(Job job) {
@@ -512,6 +553,14 @@ public class JobDetailActivity extends AppCompatActivity {
                                 "\"" + currentJob.getTitle() + "\" has been marked complete. Final payment incoming!",
                                 "job", jobId);
                         NotificationManager.getInstance().createNotification(notif);
+
+                        // Update contractor's completed-projects count and earnings
+                        double earnings = currentJob.getAcceptedBidAmount() > 0
+                                ? currentJob.getAcceptedBidAmount() : currentJob.getBudget();
+                        UserManager.getInstance()
+                                .recordCompletedJob(currentJob.getAssignedContractorId(), earnings)
+                                .addOnFailureListener(e -> android.util.Log.e("JobDetailActivity",
+                                        "Failed to update contractor stats: " + e.getMessage()));
                     }
 
                     loadJobDetails();
@@ -563,7 +612,12 @@ public class JobDetailActivity extends AppCompatActivity {
         layout.addView(tvRatingLabel);
 
         // Rating bar
-        android.widget.RatingBar ratingBar = new android.widget.RatingBar(this);
+        // Uses the small/indicator style explicitly: the default RatingBar style tiles
+        // its star drawable to fill the widget's measured width rather than strictly
+        // capping at numStars, so plain `new RatingBar(this)` can render extra stars.
+        android.widget.RatingBar ratingBar = new android.widget.RatingBar(
+                this, null, android.R.attr.ratingBarStyleSmall);
+        ratingBar.setIsIndicator(false); // the small style defaults to indicator-only (read-only)
         ratingBar.setNumStars(5);
         ratingBar.setStepSize(1f);
         ratingBar.setRating(5f);

@@ -84,6 +84,13 @@ public class ContractorDashboardActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        // Reassert Home as selected: every other nav item/card just launches a
+        // separate Activity on top, so returning here always means Home content
+        // is what's showing, regardless of which tab was last tapped.
+        bottomNav.setSelectedItemId(R.id.nav_home);
+        // Refresh contractor stats card (rating/reviews/completed/earnings) — was only
+        // ever loaded once in onCreate, so it went stale after a review or job completion.
+        loadContractorData();
         // Refresh jobs when returning
         Log.d(TAG, "onResume - Refreshing available jobs");
         loadAvailableJobs();
@@ -238,9 +245,8 @@ public class ContractorDashboardActivity extends AppCompatActivity {
             // Completed projects
             tvCompletedCount.setText(String.valueOf(user.getCompletedProjects()));
 
-            // Total earnings (calculate from hourly rate * completed projects as estimate)
-            double estimatedEarnings = user.getHourlyRate() * user.getCompletedProjects() * 40; // Estimate
-            tvTotalEarnings.setText("Rs. " + formatCurrency(estimatedEarnings));
+            // Total earnings (real, accumulated from completed jobs)
+            tvTotalEarnings.setText("Rs. " + formatCurrency(user.getTotalEarnings()));
 
             Log.d(TAG, "UI updated with contractor: " + user.getFullName());
         } else if (user != null && !user.isContractor()) {

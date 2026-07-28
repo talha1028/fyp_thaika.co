@@ -19,10 +19,11 @@ import okhttp3.Response;
 
 public class GeminiHelper {
     private static final String TAG = "GeminiHelper";
-    private static final String BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=";
+    // Package-private, non-final: overridden by tests to point at a MockWebServer instance.
+    static String BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=";
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
 
-    private static final OkHttpClient client = new OkHttpClient.Builder()
+    static OkHttpClient client = new OkHttpClient.Builder()
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)

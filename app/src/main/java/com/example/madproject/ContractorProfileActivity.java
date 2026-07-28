@@ -40,7 +40,7 @@ public class ContractorProfileActivity extends AppCompatActivity {
 
     private CircleImageView ivProfileImage;
     private TextView tvName, tvCategory, tvRating, tvExperience, tvHourlyRate, tvBio;
-    private TextView tvCompletedProjects, tvTotalReviews, tvLocation;
+    private TextView tvCompletedProjects, tvTotalReviews, tvLocation, tvEarnings;
     private TextView tvViewAllPortfolio, tvViewAllReviews;
     private RecyclerView rvPortfolio, rvReviews;
     private Button btnCall, btnMessage;
@@ -75,6 +75,18 @@ public class ContractorProfileActivity extends AppCompatActivity {
         loadProfile();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Refreshes the rating badge and review list in case a review was
+        // submitted elsewhere while this screen stayed alive on the back stack.
+        // loadProfile() re-fetches the User doc (rating/totalReviews) and then
+        // chains into loadReviews() itself.
+        if (contractorId != null) {
+            loadProfile();
+        }
+    }
+
     private void initViews() {
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -91,6 +103,7 @@ public class ContractorProfileActivity extends AppCompatActivity {
         tvHourlyRate = findViewById(R.id.tvHourlyRate);
         tvBio = findViewById(R.id.tvBio);
         tvCompletedProjects = findViewById(R.id.tvCompletedProjects);
+        tvEarnings = findViewById(R.id.tvEarnings);
         tvTotalReviews = findViewById(R.id.tvTotalReviews);
         tvLocation = findViewById(R.id.tvLocation);
 
@@ -254,6 +267,11 @@ public class ContractorProfileActivity extends AppCompatActivity {
             tvCompletedProjects.setText(user.getCompletedProjects() + " projects");
         }
 
+        // Set total earnings
+        if (tvEarnings != null) {
+            tvEarnings.setText("Rs. " + formatCurrency(user.getTotalEarnings()));
+        }
+
         // Set total reviews
         if (tvTotalReviews != null) {
             tvTotalReviews.setText(user.getTotalReviews() + " reviews");
@@ -337,6 +355,7 @@ public class ContractorProfileActivity extends AppCompatActivity {
                 })
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "Error loading reviews: " + e.getMessage());
+                    Toast.makeText(this, "Couldn't load reviews: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
 

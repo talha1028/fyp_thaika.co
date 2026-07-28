@@ -79,6 +79,10 @@ public class ClientDashboardActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        // Reassert Home as selected: every other nav item/card just launches a
+        // separate Activity on top, so returning here always means Home content
+        // is what's showing, regardless of which tab was last tapped.
+        bottomNavigation.setSelectedItemId(R.id.nav_home);
         // Refresh jobs when returning to dashboard
         Log.d(TAG, "onResume - Refreshing jobs");
         loadUserJobs();
