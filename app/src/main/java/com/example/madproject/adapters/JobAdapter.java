@@ -47,10 +47,10 @@ public class JobAdapter extends RecyclerView.Adapter<JobAdapter.JobViewHolder> {
         Job job = jobList.get(position);
 
         // Set job title
-        holder.tvJobTitle.setText(job.getTitle());
+        holder.tvJobTitle.setText(job.getTitle() != null ? job.getTitle() : "");
 
         // Set category
-        holder.tvCategory.setText(job.getCategory());
+        holder.tvCategory.setText(job.getCategory() != null ? job.getCategory() : "");
 
         // Format and set budget
         NumberFormat formatter = NumberFormat.getCurrencyInstance(new Locale("en", "PK"));
@@ -58,15 +58,16 @@ public class JobAdapter extends RecyclerView.Adapter<JobAdapter.JobViewHolder> {
         holder.tvBudget.setText(budgetText);
 
         // Set location
-        holder.tvLocation.setText(job.getLocation());
+        holder.tvLocation.setText(job.getLocation() != null ? job.getLocation() : "");
 
         // Set posted date
         String dateText = getRelativeTime(job.getPostedDate());
         holder.tvPostedDate.setText(dateText);
 
         // Set status with color
-        holder.tvStatus.setText(job.getStatus().toUpperCase());
-        setStatusColor(holder.tvStatus, job.getStatus());
+        String status = job.getStatus() != null ? job.getStatus() : "";
+        holder.tvStatus.setText(status.toUpperCase());
+        setStatusColor(holder.tvStatus, status);
 
         // Set bid count
         String bidsText = job.getTotalBids() + " bids";

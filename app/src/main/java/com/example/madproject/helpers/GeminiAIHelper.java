@@ -14,6 +14,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class GeminiAIHelper {
@@ -44,6 +45,17 @@ public class GeminiAIHelper {
         this.executor = Runnable::run;
         this.modelFutures = modelFutures;
         resetConversation();
+    }
+
+    /**
+     * Releases the background thread backing this helper. Call from the owning Activity's
+     * onDestroy() - without this, every GeminiAIHelper instance (one per chat session) leaks its
+     * single-thread executor for the lifetime of the process.
+     */
+    public void shutdown() {
+        if (executor instanceof ExecutorService) {
+            ((ExecutorService) executor).shutdown();
+        }
     }
 
     /** Multi-turn chat — maintains conversation history across calls. */

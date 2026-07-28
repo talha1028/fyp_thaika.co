@@ -177,14 +177,47 @@ public class SubmitBidActivity extends AppCompatActivity {
     }
 
     private void submitBid() {
-        String amount = etBidAmount.getText().toString().trim();
-        String days = etCompletionDays.getText().toString().trim();
+        String amountStr = etBidAmount.getText().toString().trim();
+        String daysStr = etCompletionDays.getText().toString().trim();
         String proposal = etProposal.getText().toString().trim();
 
         // Validate
-        if (TextUtils.isEmpty(amount)) {
+        if (TextUtils.isEmpty(amountStr)) {
             etBidAmount.setError("Amount required");
             etBidAmount.requestFocus();
+            return;
+        }
+
+        double amount;
+        try {
+            amount = Double.parseDouble(amountStr);
+        } catch (NumberFormatException e) {
+            etBidAmount.setError("Enter a valid amount");
+            etBidAmount.requestFocus();
+            return;
+        }
+        if (amount <= 0) {
+            etBidAmount.setError("Amount must be greater than 0");
+            etBidAmount.requestFocus();
+            return;
+        }
+        if (job != null && job.getBudget() > 0 && amount > job.getBudget()) {
+            etBidAmount.setError("Bid cannot exceed the job's budget");
+            etBidAmount.requestFocus();
+            return;
+        }
+
+        int days;
+        try {
+            days = daysStr.isEmpty() ? 30 : Integer.parseInt(daysStr);
+        } catch (NumberFormatException e) {
+            etCompletionDays.setError("Enter a valid number of days");
+            etCompletionDays.requestFocus();
+            return;
+        }
+        if (days < 1 || days > 365) {
+            etCompletionDays.setError("Must be between 1 and 365 days");
+            etCompletionDays.requestFocus();
             return;
         }
 
@@ -218,25 +251,10 @@ public class SubmitBidActivity extends AppCompatActivity {
                     // Update job reference
                     job = currentJob;
 
-                    // Check if already bid on this job
-                    BidManager.getInstance()
-                            .checkExistingBid(jobId, currentUserId)
-                            .addOnSuccessListener(querySnapshot -> {
-                                if (!querySnapshot.isEmpty()) {
-                                    showLoading(false);
-                                    Toast.makeText(this, "You already submitted a bid for this job",
-                                            Toast.LENGTH_SHORT).show();
-                                    return;
-                                }
-
-                                // Create bid
-                                createBid(amount, days, proposal);
-                            })
-                            .addOnFailureListener(e -> {
-                                showLoading(false);
-                                Toast.makeText(this, "Error checking existing bid: " + e.getMessage(),
-                                        Toast.LENGTH_SHORT).show();
-                            });
+                    // Create bid - duplicate submission is caught atomically inside createBid()
+                    // itself now (deterministic bid id + transaction), so no separate
+                    // check-then-act round trip is needed here.
+                    createBid(amount, days, proposal);
                 })
                 .addOnFailureListener(e -> {
                     showLoading(false);
@@ -245,7 +263,7 @@ public class SubmitBidActivity extends AppCompatActivity {
                 });
     }
 
-    private void createBid(String amount, String days, String proposal) {
+    private void createBid(double amount, int days, String proposal) {
         // Get contractor info
         UserManager.getInstance()
                 .getUserObject(currentUserId, new UserManager.OnUserLoadedListener() {
@@ -258,7 +276,10 @@ public class SubmitBidActivity extends AppCompatActivity {
                             return;
                         }
 
-                        String bidId = "bid_" + UUID.randomUUID().toString();
+                        // Deterministic id (not a random UUID): guarantees at most one bid per
+                        // job/contractor pair even under a race, since createBidIfNotExists()
+                        // checks-and-creates this exact doc inside a single transaction.
+                        String bidId = "bid_" + jobId + "_" + currentUserId;
 
                         Bid bid = new Bid(
                                 bidId,
@@ -266,8 +287,8 @@ public class SubmitBidActivity extends AppCompatActivity {
                                 job != null ? job.getTitle() : "",
                                 currentUserId,
                                 contractor.getFullName(),
-                                Double.parseDouble(amount),
-                                days.isEmpty() ? 30 : Integer.parseInt(days),
+                                amount,
+                                days,
                                 proposal
                         );
 
@@ -278,7 +299,7 @@ public class SubmitBidActivity extends AppCompatActivity {
 
                         // Submit bid
                         BidManager.getInstance()
-                                .createBid(bid)
+                                .createBidIfNotExists(bid)
                                 .addOnSuccessListener(aVoid -> {
                                     // Increment job's totalBids
                                     JobManager.getInstance()
@@ -305,8 +326,13 @@ public class SubmitBidActivity extends AppCompatActivity {
                                 })
                                 .addOnFailureListener(e -> {
                                     showLoading(false);
+                                    boolean alreadyExists = e instanceof com.google.firebase.firestore.FirebaseFirestoreException
+                                            && ((com.google.firebase.firestore.FirebaseFirestoreException) e).getCode()
+                                            == com.google.firebase.firestore.FirebaseFirestoreException.Code.ALREADY_EXISTS;
                                     Toast.makeText(SubmitBidActivity.this,
-                                            "Error submitting bid: " + e.getMessage(),
+                                            alreadyExists
+                                                    ? "You already submitted a bid for this job"
+                                                    : "Error submitting bid: " + e.getMessage(),
                                             Toast.LENGTH_LONG).show();
                                 });
                     }
@@ -381,6 +407,12 @@ public class SubmitBidActivity extends AppCompatActivity {
             etProposal.setEnabled(true);
             cbTerms.setEnabled(true);
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (aiHelper != null) aiHelper.shutdown();
     }
 
     @Override

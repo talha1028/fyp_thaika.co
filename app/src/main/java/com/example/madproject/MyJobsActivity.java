@@ -209,13 +209,13 @@ public class MyJobsActivity extends AppCompatActivity {
         for (Job job : allJobsList) {
             // Apply search filter
             boolean matchesSearch = searchQuery.isEmpty() ||
-                    job.getTitle().toLowerCase().contains(searchQuery) ||
-                    job.getDescription().toLowerCase().contains(searchQuery) ||
-                    job.getCategory().toLowerCase().contains(searchQuery);
+                    (job.getTitle() != null && job.getTitle().toLowerCase().contains(searchQuery)) ||
+                    (job.getDescription() != null && job.getDescription().toLowerCase().contains(searchQuery)) ||
+                    (job.getCategory() != null && job.getCategory().toLowerCase().contains(searchQuery));
 
             // Apply status filter
             boolean matchesStatus = currentFilter.equals("all") ||
-                    job.getStatus().equals(currentFilter);
+                    currentFilter.equals(job.getStatus());
 
             if (matchesSearch && matchesStatus) {
                 filteredJobsList.add(job);

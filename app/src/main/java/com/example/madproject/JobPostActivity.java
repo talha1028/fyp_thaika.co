@@ -447,6 +447,7 @@ public class JobPostActivity extends AppCompatActivity {
     private void uploadPhotosAndPost(Job job) {
         List<String> uploadedUrls = new ArrayList<>();
         int[] remaining = {selectedPhotoUris.size()};
+        int[] failedCount = {0};
 
         for (int i = 0; i < selectedPhotoUris.size(); i++) {
             Uri uri = selectedPhotoUris.get(i);
@@ -462,27 +463,34 @@ public class JobPostActivity extends AppCompatActivity {
                         remaining[0]--;
                         if (remaining[0] == 0) {
                             job.setAttachments(uploadedUrls);
-                            saveJobToFirestore(job);
+                            saveJobToFirestore(job, failedCount[0]);
                         }
                     })
                     .addOnFailureListener(e -> {
+                        failedCount[0]++;
                         remaining[0]--;
                         if (remaining[0] == 0) {
                             job.setAttachments(uploadedUrls);
-                            saveJobToFirestore(job);
+                            saveJobToFirestore(job, failedCount[0]);
                         }
                     });
         }
     }
 
     private void saveJobToFirestore(Job job) {
+        saveJobToFirestore(job, 0);
+    }
+
+    private void saveJobToFirestore(Job job, int failedPhotoCount) {
         JobManager.getInstance()
                 .createJob(job)
                 .addOnSuccessListener(aVoid -> {
                     showLoading(false);
                     updateClientJobCount();
-                    Toast.makeText(JobPostActivity.this,
-                            "Job posted successfully!", Toast.LENGTH_SHORT).show();
+                    String message = failedPhotoCount > 0
+                            ? "Job posted, but " + failedPhotoCount + " photo(s) failed to upload."
+                            : "Job posted successfully!";
+                    Toast.makeText(JobPostActivity.this, message, Toast.LENGTH_LONG).show();
                     finish();
                 })
                 .addOnFailureListener(e -> {
@@ -493,18 +501,10 @@ public class JobPostActivity extends AppCompatActivity {
     }
 
     private void updateClientJobCount() {
-        // Increment active jobs count for client
+        // Atomic increment - avoids the lost-update race of a read-modify-write when jobs are
+        // posted back-to-back or from two devices.
         UserManager.getInstance()
-                .getUser(currentUserId)
-                .addOnSuccessListener(documentSnapshot -> {
-                    if (documentSnapshot.exists()) {
-                        User user = documentSnapshot.toObject(User.class);
-                        if (user != null) {
-                            user.setActiveJobs(user.getActiveJobs() + 1);
-                            UserManager.getInstance().updateUser(user);
-                        }
-                    }
-                });
+                .updateField(currentUserId, "activeJobs", com.google.firebase.firestore.FieldValue.increment(1));
     }
 
     private boolean validateInputs(String title, String description, String budgetStr,
@@ -635,6 +635,12 @@ public class JobPostActivity extends AppCompatActivity {
             btnTakePhoto.setEnabled(true);
             btnAddPhoto.setEnabled(true);
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (aiHelper != null) aiHelper.shutdown();
     }
 
     @Override

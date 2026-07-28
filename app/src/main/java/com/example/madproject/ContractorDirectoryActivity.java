@@ -67,6 +67,14 @@ public class ContractorDirectoryActivity extends AppCompatActivity {
         loadContractors();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Refresh on return - a contractor's rating/rate/category may have changed elsewhere
+        // while this screen stayed alive on the back stack.
+        loadContractors();
+    }
+
     private void initViews() {
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);

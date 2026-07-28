@@ -24,6 +24,14 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     private static final String CHANNEL_ID = "madproject_notifications";
     private static final String CHANNEL_NAME = "MadProject Notifications";
 
+    // Shared across notification-id and PendingIntent request-code: (int) System.currentTimeMillis()
+    // truncates a long, so two notifications delivered in the same millisecond collided (one
+    // silently replaced the other, and their PendingIntents - both requestCode 0, targeting the
+    // same Activity class - were treated as identical, so tapping an older notification could
+    // navigate using a newer one's extras).
+    private static final java.util.concurrent.atomic.AtomicInteger notificationIdCounter =
+            new java.util.concurrent.atomic.AtomicInteger(0);
+
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
         super.onMessageReceived(remoteMessage);
@@ -117,9 +125,11 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 
+        int notificationId = notificationIdCounter.incrementAndGet();
+
         PendingIntent pendingIntent = PendingIntent.getActivity(
                 this,
-                0,
+                notificationId,
                 intent,
                 PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE
         );
@@ -135,6 +145,6 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(message));
 
         // Show notification
-        notificationManager.notify((int) System.currentTimeMillis(), notificationBuilder.build());
+        notificationManager.notify(notificationId, notificationBuilder.build());
     }
 }

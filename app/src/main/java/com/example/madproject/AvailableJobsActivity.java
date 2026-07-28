@@ -263,8 +263,13 @@ public class AvailableJobsActivity extends AppCompatActivity {
                 .setPositiveButton("Apply", (d, w) -> {
                     String minStr = etMin.getText().toString().trim();
                     String maxStr = etMax.getText().toString().trim();
-                    minBudget = TextUtils.isEmpty(minStr) ? 0 : Double.parseDouble(minStr);
-                    maxBudget = TextUtils.isEmpty(maxStr) ? Double.MAX_VALUE : Double.parseDouble(maxStr);
+                    try {
+                        minBudget = TextUtils.isEmpty(minStr) ? 0 : Double.parseDouble(minStr);
+                        maxBudget = TextUtils.isEmpty(maxStr) ? Double.MAX_VALUE : Double.parseDouble(maxStr);
+                    } catch (NumberFormatException e) {
+                        Toast.makeText(this, "Enter valid numbers", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
                     boolean hasFilter = minBudget > 0 || maxBudget < Double.MAX_VALUE;
                     btnBudgetFilter.setBackgroundResource(hasFilter ?
                             R.drawable.bg_pill_selected : R.drawable.bg_pill_unselected);

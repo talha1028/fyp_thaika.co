@@ -33,11 +33,22 @@ public class EditProfileActivity extends AppCompatActivity {
     private CircleImageView ivProfilePicture;
     private EditText etFullName, etEmail, etPhone, etAddress;
     private Spinner spinnerCity;
-    private Button btnSaveProfile, btnCancel;
+    private Button btnSaveProfile, btnCancel, btnManagePortfolio;
     private ProgressBar progressBar;
     private TextView tvPhoneVerifyStatus;
     private ShimmerLayout shimmerForm;
     private View formContent;
+
+    // Contractor-only fields
+    private TextView labelBio, labelCategory, labelExperience, labelHourlyRate;
+    private EditText etBio, etExperience, etHourlyRate;
+    private Spinner spinnerCategory;
+
+    private static final String[] CATEGORIES = {
+            "Select Category", "Construction", "Plumbing", "Electrical", "Painting",
+            "Carpentry", "Masonry", "Roofing", "Flooring", "Interior Design",
+            "Landscaping", "HVAC", "Welding", "Tiling", "Renovation", "Other"
+    };
 
     private FirebaseAuth mAuth;
     private StorageReference storageRef;
@@ -93,9 +104,26 @@ public class EditProfileActivity extends AppCompatActivity {
         spinnerCity = findViewById(R.id.spinnerCity);
         btnSaveProfile = findViewById(R.id.btnSaveProfile);
         btnCancel = findViewById(R.id.btnCancel);
+        btnManagePortfolio = findViewById(R.id.btnManagePortfolio);
         tvPhoneVerifyStatus = findViewById(R.id.tvPhoneVerifyStatus);
         shimmerForm = findViewById(R.id.shimmerForm);
         formContent = findViewById(R.id.formContent);
+
+        labelBio = findViewById(R.id.labelBio);
+        etBio = findViewById(R.id.etBio);
+        labelCategory = findViewById(R.id.labelCategory);
+        spinnerCategory = findViewById(R.id.spinnerCategory);
+        labelExperience = findViewById(R.id.labelExperience);
+        etExperience = findViewById(R.id.etExperience);
+        labelHourlyRate = findViewById(R.id.labelHourlyRate);
+        etHourlyRate = findViewById(R.id.etHourlyRate);
+
+        if (spinnerCategory != null) {
+            ArrayAdapter<String> catAdapter = new ArrayAdapter<>(
+                    this, android.R.layout.simple_spinner_item, CATEGORIES);
+            catAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            spinnerCategory.setAdapter(catAdapter);
+        }
 
         // Try to find ProgressBar
         progressBar = findViewById(R.id.progressBar);
@@ -128,6 +156,13 @@ public class EditProfileActivity extends AppCompatActivity {
     private void setupClickListeners() {
         btnSaveProfile.setOnClickListener(v -> saveProfile());
         btnCancel.setOnClickListener(v -> finish());
+        if (btnManagePortfolio != null) {
+            btnManagePortfolio.setOnClickListener(v -> {
+                Intent intent = new Intent(this, PortfolioGalleryActivity.class);
+                intent.putExtra("contractorId", currentUserId);
+                startActivity(intent);
+            });
+        }
         ivProfilePicture.setOnClickListener(v -> imagePickerLauncher.launch("image/*"));
         if (tvPhoneVerifyStatus != null) {
             tvPhoneVerifyStatus.setOnClickListener(v -> {
@@ -194,12 +229,45 @@ public class EditProfileActivity extends AppCompatActivity {
         setSpinnerValue(spinnerCity, user.getCity());
         updateVerifyBadge(user.isPhoneVerified());
 
+        if (btnManagePortfolio != null) {
+            btnManagePortfolio.setVisibility(user.isContractor() ? View.VISIBLE : View.GONE);
+        }
+
+        int contractorVisibility = user.isContractor() ? View.VISIBLE : View.GONE;
+        setViewVisibility(labelBio, contractorVisibility);
+        setViewVisibility(etBio, contractorVisibility);
+        setViewVisibility(labelCategory, contractorVisibility);
+        setViewVisibility(spinnerCategory, contractorVisibility);
+        setViewVisibility(labelExperience, contractorVisibility);
+        setViewVisibility(etExperience, contractorVisibility);
+        setViewVisibility(labelHourlyRate, contractorVisibility);
+        setViewVisibility(etHourlyRate, contractorVisibility);
+
+        if (user.isContractor()) {
+            if (etBio != null) etBio.setText(user.getBio());
+            if (spinnerCategory != null) setSpinnerValue(spinnerCategory, user.getCategory());
+            if (etExperience != null && user.getExperienceYears() > 0) {
+                etExperience.setText(String.valueOf(user.getExperienceYears()));
+            }
+            if (etHourlyRate != null && user.getHourlyRate() > 0) {
+                etHourlyRate.setText(String.valueOf((int) user.getHourlyRate()));
+            }
+        }
+
         Glide.with(this)
                 .load(user.getProfilePictureUrl())
                 .placeholder(R.drawable.ic_default_profile)
                 .error(R.drawable.ic_default_profile)
                 .circleCrop()
                 .into(ivProfilePicture);
+    }
+
+    private void setViewVisibility(View view, int visibility) {
+        if (view != null) view.setVisibility(visibility);
+    }
+
+    private void setEnabledIfPresent(View view, boolean enabled) {
+        if (view != null) view.setEnabled(enabled);
     }
 
     private void updateVerifyBadge(boolean verified) {
@@ -225,6 +293,19 @@ public class EditProfileActivity extends AppCompatActivity {
         currentUser.setPhoneNumber(etPhone.getText().toString().trim());
         currentUser.setAddress(etAddress.getText().toString().trim());
         currentUser.setCity(spinnerCity.getSelectedItem().toString());
+
+        if (currentUser.isContractor()) {
+            if (etBio != null) currentUser.setBio(etBio.getText().toString().trim());
+            if (spinnerCategory != null) currentUser.setCategory(spinnerCategory.getSelectedItem().toString());
+            if (etExperience != null) {
+                String experienceStr = etExperience.getText().toString().trim();
+                if (!experienceStr.isEmpty()) currentUser.setExperienceYears(Integer.parseInt(experienceStr));
+            }
+            if (etHourlyRate != null) {
+                String rateStr = etHourlyRate.getText().toString().trim();
+                if (!rateStr.isEmpty()) currentUser.setHourlyRate(Double.parseDouble(rateStr));
+            }
+        }
 
         showLoading(true);
 
@@ -263,6 +344,47 @@ public class EditProfileActivity extends AppCompatActivity {
             return false;
         }
 
+        if (currentUser != null && currentUser.isContractor()) {
+            if (spinnerCategory != null && spinnerCategory.getSelectedItem().toString().equals("Select Category")) {
+                Toast.makeText(this, "Please select a category", Toast.LENGTH_SHORT).show();
+                return false;
+            }
+            if (etExperience != null) {
+                String experienceStr = etExperience.getText().toString().trim();
+                if (!experienceStr.isEmpty()) {
+                    try {
+                        int years = Integer.parseInt(experienceStr);
+                        if (years < 0 || years > 80) {
+                            etExperience.setError("Enter a valid number of years");
+                            etExperience.requestFocus();
+                            return false;
+                        }
+                    } catch (NumberFormatException e) {
+                        etExperience.setError("Enter a valid number");
+                        etExperience.requestFocus();
+                        return false;
+                    }
+                }
+            }
+            if (etHourlyRate != null) {
+                String rateStr = etHourlyRate.getText().toString().trim();
+                if (!rateStr.isEmpty()) {
+                    try {
+                        double rate = Double.parseDouble(rateStr);
+                        if (rate <= 0) {
+                            etHourlyRate.setError("Hourly rate must be greater than 0");
+                            etHourlyRate.requestFocus();
+                            return false;
+                        }
+                    } catch (NumberFormatException e) {
+                        etHourlyRate.setError("Enter a valid amount");
+                        etHourlyRate.requestFocus();
+                        return false;
+                    }
+                }
+            }
+        }
+
         return true;
     }
 
@@ -288,6 +410,10 @@ public class EditProfileActivity extends AppCompatActivity {
             etPhone.setEnabled(false);
             etAddress.setEnabled(false);
             spinnerCity.setEnabled(false);
+            setEnabledIfPresent(etBio, false);
+            setEnabledIfPresent(spinnerCategory, false);
+            setEnabledIfPresent(etExperience, false);
+            setEnabledIfPresent(etHourlyRate, false);
         } else {
             progressBar.setVisibility(View.GONE);
             btnSaveProfile.setEnabled(true);
@@ -297,6 +423,10 @@ public class EditProfileActivity extends AppCompatActivity {
             etPhone.setEnabled(true);
             etAddress.setEnabled(true);
             spinnerCity.setEnabled(true);
+            setEnabledIfPresent(etBio, true);
+            setEnabledIfPresent(spinnerCategory, true);
+            setEnabledIfPresent(etExperience, true);
+            setEnabledIfPresent(etHourlyRate, true);
         }
     }
 

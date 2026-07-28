@@ -156,7 +156,7 @@ public class NotificationsActivity extends AppCompatActivity {
         String type = notification.getType();
         String relatedId = notification.getRelatedId();
 
-        if (relatedId == null || relatedId.isEmpty()) {
+        if (relatedId == null || relatedId.isEmpty() || type == null) {
             return;
         }
 

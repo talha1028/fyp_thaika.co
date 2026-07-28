@@ -236,6 +236,12 @@ public class AddMaterialActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (aiHelper != null) aiHelper.shutdown();
+    }
+
+    @Override
     public boolean onSupportNavigateUp() {
         onBackPressed();
         return true;

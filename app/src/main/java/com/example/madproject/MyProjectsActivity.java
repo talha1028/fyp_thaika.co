@@ -62,6 +62,14 @@ public class MyProjectsActivity extends AppCompatActivity {
         loadMyProjects();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Refresh on return - a project's status/payment state may have changed elsewhere
+        // (JobDetailActivity) while this screen stayed alive on the back stack.
+        loadMyProjects();
+    }
+
     private void initViews() {
         toolbar = findViewById(R.id.toolbar);
         tabLayout = findViewById(R.id.tabLayout);

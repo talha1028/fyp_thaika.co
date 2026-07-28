@@ -11227,7 +11227,7 @@ public class GeminiAIHelper {
     private static final String TAG = "GeminiAI";
 
     // ⚠️ IMPORTANT: Replace with your actual Gemini API key
-    private static final String API_KEY = "AIzaSyCP14QE15TFDIbOgKPX23sPN8qlOnvIORY";
+    private static final String API_KEY = "YOUR_GEMINI_API_KEY";
 
     private GenerativeModelFutures model;
     private Executor executor;

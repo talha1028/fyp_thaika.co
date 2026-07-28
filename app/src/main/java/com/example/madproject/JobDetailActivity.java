@@ -1,6 +1,7 @@
 package com.example.madproject;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
@@ -20,6 +21,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.madproject.adapters.BidAdapter;
 import com.example.madproject.firebase.BidManager;
+import com.example.madproject.firebase.ContractManager;
 import com.example.madproject.firebase.JobManager;
 import com.example.madproject.firebase.NotificationManager;
 import com.example.madproject.firebase.ReviewManager;
@@ -27,6 +29,7 @@ import com.example.madproject.firebase.UserManager;
 import com.example.madproject.helpers.ContractOrchestrator;
 import com.example.madproject.helpers.GeminiAIHelper;
 import com.example.madproject.models.Bid;
+import com.example.madproject.models.Contract;
 import com.example.madproject.models.Job;
 import com.example.madproject.models.Notification;
 import com.example.madproject.models.Review;
@@ -748,74 +751,56 @@ public class JobDetailActivity extends AppCompatActivity {
     private void generateContract() {
         if (currentJob == null) return;
         btnGenerateContract.setEnabled(false);
-        btnGenerateContract.setText("Generating...");
+        btnGenerateContract.setText("Loading...");
 
-        UserManager.getInstance().getUserObject(currentUserId, new UserManager.OnUserLoadedListener() {
-            @Override
-            public void onUserLoaded(com.example.madproject.models.User user) {
-                String clientName = user != null ? user.getFullName() : "Client";
-                String contractorName = currentJob.getAssignedContractorName() != null ?
-                        currentJob.getAssignedContractorName() : "Contractor";
+        // A contract may already exist for this job (e.g. auto-generated when the bid was
+        // accepted) - open that one directly instead of generating (and paying for) a duplicate.
+        ContractManager.getInstance().getContractsByJob(jobId)
+                .addOnSuccessListener(snap -> {
+                    if (!snap.isEmpty()) {
+                        btnGenerateContract.setEnabled(true);
+                        btnGenerateContract.setText("📄 Generate Contract");
+                        Contract existing = snap.getDocuments().get(0).toObject(Contract.class);
+                        if (existing != null && existing.getPdfUrl() != null) {
+                            openContractPdf(existing.getPdfUrl());
+                        } else {
+                            Toast.makeText(this, "Contract found but its PDF is missing.", Toast.LENGTH_SHORT).show();
+                        }
+                        return;
+                    }
 
-                aiHelper.generateContract(
-                        currentJob.getTitle(),
-                        clientName,
-                        contractorName,
-                        currentJob.getDescription(),
-                        currentJob.getAcceptedBidAmount() > 0 ? currentJob.getAcceptedBidAmount() : currentJob.getBudget(),
-                        currentJob.getTimeline(),
-                        currentJob.getLocation(),
-                        new GeminiAIHelper.AIResponseListener() {
-                            @Override
-                            public void onResponse(String response) {
-                                runOnUiThread(() -> {
-                                    btnGenerateContract.setEnabled(true);
-                                    btnGenerateContract.setText("📄 Generate Contract");
-                                    showContractDialog(response);
-                                });
-                            }
-                            @Override
-                            public void onError(String error) {
-                                runOnUiThread(() -> {
-                                    btnGenerateContract.setEnabled(true);
-                                    btnGenerateContract.setText("📄 Generate Contract");
-                                    Toast.makeText(JobDetailActivity.this, "AI error: " + error, Toast.LENGTH_SHORT).show();
-                                });
-                            }
-                        });
-            }
-            @Override
-            public void onError(String error) {
-                runOnUiThread(() -> {
+                    btnGenerateContract.setText("Generating...");
+                    contractOrchestrator.generateAndSendContract(currentJob,
+                            new ContractOrchestrator.ContractResultListener() {
+                                @Override
+                                public void onContractReady(String pdfUrl) {
+                                    runOnUiThread(() -> {
+                                        btnGenerateContract.setEnabled(true);
+                                        btnGenerateContract.setText("📄 Generate Contract");
+                                        openContractPdf(pdfUrl);
+                                    });
+                                }
+
+                                @Override
+                                public void onError(String error) {
+                                    runOnUiThread(() -> {
+                                        btnGenerateContract.setEnabled(true);
+                                        btnGenerateContract.setText("📄 Generate Contract");
+                                        Toast.makeText(JobDetailActivity.this,
+                                                "Contract generation failed: " + error, Toast.LENGTH_SHORT).show();
+                                    });
+                                }
+                            });
+                })
+                .addOnFailureListener(e -> {
                     btnGenerateContract.setEnabled(true);
                     btnGenerateContract.setText("📄 Generate Contract");
+                    Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
-            }
-        });
     }
 
-    private void showContractDialog(String contractText) {
-        android.widget.ScrollView sv = new android.widget.ScrollView(this);
-        android.widget.TextView tv = new android.widget.TextView(this);
-        tv.setText(contractText);
-        tv.setTextSize(13f);
-        tv.setTextColor(0xFF212121);
-        tv.setPadding(48, 32, 48, 32);
-        tv.setLineSpacing(4f, 1f);
-        sv.addView(tv);
-
-        new AlertDialog.Builder(this)
-                .setTitle("📄 Construction Contract")
-                .setView(sv)
-                .setPositiveButton("Share", (d, w) -> {
-                    Intent share = new Intent(Intent.ACTION_SEND);
-                    share.setType("text/plain");
-                    share.putExtra(Intent.EXTRA_SUBJECT, "Contract — " + (currentJob != null ? currentJob.getTitle() : ""));
-                    share.putExtra(Intent.EXTRA_TEXT, contractText);
-                    startActivity(Intent.createChooser(share, "Share Contract"));
-                })
-                .setNegativeButton("Close", null)
-                .show();
+    private void openContractPdf(String pdfUrl) {
+        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(pdfUrl)));
     }
 
     private void showBudgetTips() {
@@ -987,6 +972,13 @@ public class JobDetailActivity extends AppCompatActivity {
     private void showLoading(boolean show) {
         // Implement loading indicator
         // You can add a ProgressBar to your layout or use a loading dialog
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (aiHelper != null) aiHelper.shutdown();
+        if (contractOrchestrator != null) contractOrchestrator.shutdown();
     }
 
     @Override

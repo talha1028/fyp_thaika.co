@@ -83,7 +83,7 @@
                     android:id="@+id/subtitleText"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="filled below fields to login your account"
+                    android:text="Enter Email and Password to Login."
                     android:textSize="13sp"
                     android:textColor="#99FFFFFF"
                     android:textAlignment="center"

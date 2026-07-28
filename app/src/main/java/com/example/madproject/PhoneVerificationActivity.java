@@ -18,6 +18,7 @@ import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 import com.google.firebase.FirebaseException;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.google.firebase.auth.PhoneAuthCredential;
 import com.google.firebase.auth.PhoneAuthOptions;
 import com.google.firebase.auth.PhoneAuthProvider;
@@ -162,9 +163,18 @@ public class PhoneVerificationActivity extends AppCompatActivity {
         mAuth.getCurrentUser().linkWithCredential(credential)
                 .addOnSuccessListener(result -> onPhoneVerified())
                 .addOnFailureListener(e -> {
-                    // If already linked, treat as success via updateProfile
-                    Log.w(TAG, "linkWithCredential failed (may already be linked): " + e.getMessage());
-                    onPhoneVerified();
+                    if (e instanceof FirebaseAuthUserCollisionException) {
+                        // This phone credential is already linked to this account - harmless,
+                        // treat as verified rather than blocking the user on a no-op error.
+                        Log.w(TAG, "Phone already linked to this account: " + e.getMessage());
+                        onPhoneVerified();
+                        return;
+                    }
+                    // Any other failure (wrong/expired OTP, network error, etc.) must NOT be
+                    // treated as verified - that would let a wrong code silently "pass".
+                    showLoading(false);
+                    Log.e(TAG, "linkWithCredential failed: " + e.getMessage());
+                    Toast.makeText(this, "Verification failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
                 });
     }
 

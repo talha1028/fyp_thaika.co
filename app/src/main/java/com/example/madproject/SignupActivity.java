@@ -247,7 +247,8 @@ public class SignupActivity extends AppCompatActivity {
             return false;
         }
 
-        if (mobile.length() < 10) {
+        String mobileDigitsOnly = mobile.replaceAll("[\\s-]", "");
+        if (mobileDigitsOnly.length() < 10 || !mobileDigitsOnly.matches("\\+?[0-9]+")) {
             mobileNumber.setError("Enter a valid mobile number");
             mobileNumber.requestFocus();
             return false;

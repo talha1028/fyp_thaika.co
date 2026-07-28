@@ -2,6 +2,7 @@ package com.example.madproject.helpers;
 
 import android.util.Log;
 
+import com.example.madproject.BuildConfig;
 import com.example.madproject.firebase.UserManager;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.messaging.FirebaseMessaging;
@@ -29,12 +30,15 @@ public class FCMHelper {
                     if (task.isSuccessful() && task.getResult() != null) {
                         String token = task.getResult();
 
-                        // Log token in a clearly visible format for testing
-                        Log.d(TAG, "========================================");
-                        Log.d(TAG, "FCM TOKEN FOR TESTING:");
-                        Log.d(TAG, token);
-                        Log.d(TAG, "========================================");
-                        Log.d(TAG, "Copy this token to test notifications in Firebase Console");
+                        // Device push tokens are sensitive per-device credentials - never log
+                        // them in release builds.
+                        if (BuildConfig.DEBUG) {
+                            Log.d(TAG, "========================================");
+                            Log.d(TAG, "FCM TOKEN FOR TESTING:");
+                            Log.d(TAG, token);
+                            Log.d(TAG, "========================================");
+                            Log.d(TAG, "Copy this token to test notifications in Firebase Console");
+                        }
                         // Save token to Firestore
                         UserManager.getInstance()
                                 .updateField(userId, "fcmToken", token)

@@ -13,10 +13,17 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
+import com.example.madproject.firebase.BidManager;
 import com.example.madproject.firebase.JobManager;
+import com.example.madproject.firebase.NotificationManager;
+import com.example.madproject.models.Bid;
 import com.example.madproject.models.Job;
+import com.example.madproject.models.Notification;
 import com.example.madproject.views.ShimmerLayout;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentSnapshot;
+
+import java.util.UUID;
 
 public class JobEditActivity extends AppCompatActivity {
 
@@ -204,9 +211,15 @@ public class JobEditActivity extends AppCompatActivity {
             return;
         }
 
+        double newBudget = Double.parseDouble(budgetStr);
+        boolean scopeChanged = currentJob.getTotalBids() > 0 && (
+                Double.compare(currentJob.getBudget(), newBudget) != 0
+                        || !description.equals(currentJob.getDescription())
+                        || !category.equals(currentJob.getCategory()));
+
         currentJob.setTitle(title);
         currentJob.setDescription(description);
-        currentJob.setBudget(Double.parseDouble(budgetStr));
+        currentJob.setBudget(newBudget);
         currentJob.setTimeline(timelineStr + " days");
         currentJob.setLocation(city + ", " + address);
         currentJob.setCategory(category);
@@ -217,6 +230,7 @@ public class JobEditActivity extends AppCompatActivity {
         JobManager.getInstance()
                 .updateJob(currentJob)
                 .addOnSuccessListener(aVoid -> {
+                    if (scopeChanged) notifyBiddersOfChange();
                     Toast.makeText(this, "Job updated successfully!", Toast.LENGTH_SHORT).show();
                     setResult(RESULT_OK);
                     finish();
@@ -226,6 +240,31 @@ public class JobEditActivity extends AppCompatActivity {
                     btnSaveJob.setText("Save Changes");
                     Toast.makeText(this, "Error saving job: " + e.getMessage(),
                             Toast.LENGTH_LONG).show();
+                });
+    }
+
+    /**
+     * Budget/description/category changed after contractors already bid against the original
+     * numbers - let existing bidders know their bid may now be based on stale terms, rather than
+     * leaving them to find out only if/when their bid gets accepted.
+     */
+    private void notifyBiddersOfChange() {
+        BidManager.getInstance()
+                .getPendingBidsByJob(jobId)
+                .addOnSuccessListener(snapshot -> {
+                    for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                        Bid bid = doc.toObject(Bid.class);
+                        if (bid == null || bid.getContractorId() == null) continue;
+
+                        Notification notif = new Notification(
+                                "notif_" + UUID.randomUUID(),
+                                bid.getContractorId(),
+                                "Job Updated",
+                                "The client updated \"" + currentJob.getTitle()
+                                        + "\" (budget, description, or category changed). Review before it's accepted.",
+                                "job", jobId);
+                        NotificationManager.getInstance().createNotification(notif);
+                    }
                 });
     }
 

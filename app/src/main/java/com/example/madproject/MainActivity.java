@@ -181,13 +181,20 @@ public class MainActivity extends AppCompatActivity {
                             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                             startActivity(intent);
                             finish();
+                        } else {
+                            Toast.makeText(MainActivity.this,
+                                    "Account data not found. Please sign up again or contact support.",
+                                    Toast.LENGTH_LONG).show();
                         }
                     }
 
                     @Override
                     public void onError(String error) {
                         showLoading(false);
-                        // User not found in Firestore, stay on login
+                        // User not found in Firestore, stay on login - but say so instead of
+                        // leaving a silent dead end.
+                        Toast.makeText(MainActivity.this,
+                                "Could not load your account: " + error, Toast.LENGTH_LONG).show();
                     }
                 });
     }

@@ -41,6 +41,7 @@ public class AIChatActivity extends AppCompatActivity {
     private ChatMessageAdapter messageAdapter;
     private List<ChatMessage> messageList;
     private GeminiAIHelper aiHelper;
+    private boolean destroyed = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -204,6 +205,7 @@ public class AIChatActivity extends AppCompatActivity {
             @Override
             public void onResponse(String response) {
                 runOnUiThread(() -> {
+                    if (destroyed) return;
                     showLoading(false);
                     ChatMessage aiMessage = new ChatMessage(response, false, System.currentTimeMillis());
                     addMessage(aiMessage);
@@ -213,6 +215,7 @@ public class AIChatActivity extends AppCompatActivity {
             @Override
             public void onError(String error) {
                 runOnUiThread(() -> {
+                    if (destroyed) return;
                     showLoading(false);
                     String errorMessage = "Sorry, I encountered an error. Please try again.\n\n" +
                             "Error: " + error + "\n\n" +
@@ -225,6 +228,13 @@ public class AIChatActivity extends AppCompatActivity {
                 });
             }
         });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        destroyed = true;
+        if (aiHelper != null) aiHelper.shutdown();
     }
 
     private void addMessage(ChatMessage message) {

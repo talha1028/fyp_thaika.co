@@ -2,8 +2,10 @@ package com.example.madproject.firebase;
 
 import com.example.madproject.models.Bid;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
 
@@ -28,6 +30,24 @@ public class BidManager {
         return db.collection(COLLECTION_NAME)
                 .document(bid.getBidId())
                 .set(bid);
+    }
+
+    // CREATE - Submit new bid, atomically rejecting a duplicate. Relies on bid.getBidId() being
+    // a deterministic id (e.g. "bid_" + jobId + "_" + contractorId) so two near-simultaneous
+    // submissions for the same job/contractor pair can't both succeed - the transaction's read
+    // of the doc happens before either write commits, so the second call always sees the first
+    // one's doc and aborts instead of silently creating a duplicate bid.
+    public Task<Void> createBidIfNotExists(Bid bid) {
+        DocumentReference ref = db.collection(COLLECTION_NAME).document(bid.getBidId());
+        return db.runTransaction(transaction -> {
+            DocumentSnapshot snapshot = transaction.get(ref);
+            if (snapshot.exists()) {
+                throw new FirebaseFirestoreException("Bid already exists for this job/contractor",
+                        FirebaseFirestoreException.Code.ALREADY_EXISTS);
+            }
+            transaction.set(ref, bid);
+            return null;
+        });
     }
 
     // READ - Get single bid by ID

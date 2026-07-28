@@ -31,25 +31,53 @@ public class ContractOrchestrator {
         this.aiHelper = new GeminiAIHelper(context);
     }
 
+    /** Call from the owning Activity's onDestroy() to release the underlying AI helper's thread. */
+    public void shutdown() {
+        aiHelper.shutdown();
+    }
+
+    /** Reports the outcome of an on-demand contract generation (see generateAndSendContract(Job, listener)). */
+    public interface ContractResultListener {
+        void onContractReady(String pdfUrl);
+        void onError(String error);
+    }
+
     /** Entry point — call right after assignContractor() succeeds. Fire-and-forget from caller's perspective. */
     public void generateAndSendContract(Job job, Bid bid) {
+        generateAndSendContract(job, bid.getContractorId(), bid.getContractorName(), bid.getBidAmount(), null);
+    }
+
+    /**
+     * On-demand entry point — call from a UI action (e.g. a "Generate Contract" button) once a
+     * contractor is already assigned. Uses the job's own assigned-contractor/accepted-bid fields
+     * instead of requiring a separate Bid lookup, and reports back via listener so the caller can
+     * show the resulting PDF immediately instead of only relying on the emailed link.
+     */
+    public void generateAndSendContract(Job job, ContractResultListener listener) {
+        double amount = job.getAcceptedBidAmount() > 0 ? job.getAcceptedBidAmount() : job.getBudget();
+        generateAndSendContract(job, job.getAssignedContractorId(), job.getAssignedContractorName(), amount, listener);
+    }
+
+    private void generateAndSendContract(Job job, String contractorId, String contractorName,
+                                          double amount, ContractResultListener listener) {
         String contractId = "contract_" + UUID.randomUUID();
 
         UserManager.getInstance().getUserObject(job.getClientId(), new UserManager.OnUserLoadedListener() {
             @Override
             public void onUserLoaded(User client) {
                 String clientName = client != null ? client.getFullName() : job.getClientName();
-                aiHelper.generateContract(job.getTitle(), clientName, bid.getContractorName(),
-                        job.getDescription(), bid.getBidAmount(), job.getTimeline(), job.getLocation(),
+                aiHelper.generateContract(job.getTitle(), clientName, contractorName,
+                        job.getDescription(), amount, job.getTimeline(), job.getLocation(),
                         new GeminiAIHelper.AIResponseListener() {
                             @Override
                             public void onResponse(String contractText) {
-                                onContractTextReady(contractId, job, bid, client, contractText);
+                                onContractTextReady(contractId, job, contractorId, client, contractText, listener);
                             }
 
                             @Override
                             public void onError(String error) {
                                 Log.e(TAG, "Gemini contract generation failed: " + error);
+                                if (listener != null) listener.onError(error);
                             }
                         });
             }
@@ -57,24 +85,28 @@ public class ContractOrchestrator {
             @Override
             public void onError(String error) {
                 Log.e(TAG, "Client lookup failed: " + error);
+                if (listener != null) listener.onError(error);
             }
         });
     }
 
-    private void onContractTextReady(String contractId, Job job, Bid bid, User client, String contractText) {
+    private void onContractTextReady(String contractId, Job job, String contractorId, User client,
+                                      String contractText, ContractResultListener listener) {
         bgExecutor.execute(() -> {
             byte[] pdfBytes;
             try {
                 pdfBytes = PdfHelper.generateContractPdf(job.getTitle(), contractText);
             } catch (Exception e) {
                 Log.e(TAG, "PDF generation failed", e);
+                if (listener != null) listener.onError("PDF generation failed: " + e.getMessage());
                 return;
             }
-            uploadPdf(contractId, job, bid, client, contractText, pdfBytes);
+            uploadPdf(contractId, job, contractorId, client, contractText, pdfBytes, listener);
         });
     }
 
-    private void uploadPdf(String contractId, Job job, Bid bid, User client, String contractText, byte[] pdfBytes) {
+    private void uploadPdf(String contractId, Job job, String contractorId, User client,
+                            String contractText, byte[] pdfBytes, ContractResultListener listener) {
         StorageReference ref = FirebaseStorage.getInstance()
                 .getReference()
                 .child("contracts/" + contractId + ".pdf");
@@ -86,24 +118,33 @@ public class ContractOrchestrator {
                 })
                 .addOnSuccessListener(downloadUri -> {
                     Contract contract = new Contract(contractId, job.getJobId(), job.getTitle(),
-                            job.getClientId(), bid.getContractorId(), contractText);
+                            job.getClientId(), contractorId, contractText);
                     contract.setPdfUrl(downloadUri.toString());
 
                     ContractManager.getInstance().createContract(contract)
-                            .addOnSuccessListener(v -> sendEmails(contractId, job, bid, client, downloadUri.toString()))
-                            .addOnFailureListener(e -> Log.e(TAG, "Contract save failed", e));
+                            .addOnSuccessListener(v -> {
+                                if (listener != null) listener.onContractReady(downloadUri.toString());
+                                sendEmails(contractId, job, contractorId, client, downloadUri.toString());
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.e(TAG, "Contract save failed", e);
+                                if (listener != null) listener.onError(e.getMessage());
+                            });
                 })
-                .addOnFailureListener(e -> Log.e(TAG, "PDF upload failed", e));
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "PDF upload failed", e);
+                    if (listener != null) listener.onError(e.getMessage());
+                });
     }
 
-    private void sendEmails(String contractId, Job job, Bid bid, User client, String pdfUrl) {
+    private void sendEmails(String contractId, Job job, String contractorId, User client, String pdfUrl) {
         if (client != null && client.getEmail() != null) {
             EmailHelper.sendContractEmail(client.getEmail(), job.getTitle(), pdfUrl)
                     .addOnSuccessListener(v -> ContractManager.getInstance().markEmailSent(contractId, true))
                     .addOnFailureListener(e -> Log.e(TAG, "Client email failed", e));
         }
 
-        UserManager.getInstance().getUserObject(bid.getContractorId(), new UserManager.OnUserLoadedListener() {
+        UserManager.getInstance().getUserObject(contractorId, new UserManager.OnUserLoadedListener() {
             @Override
             public void onUserLoaded(User contractor) {
                 if (contractor != null && contractor.getEmail() != null) {
