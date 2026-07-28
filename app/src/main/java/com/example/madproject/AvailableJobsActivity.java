@@ -10,7 +10,6 @@ import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -24,6 +23,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.madproject.adapters.JobAdapter;
 import com.example.madproject.firebase.JobManager;
 import com.example.madproject.models.Job;
+import com.example.madproject.views.ShimmerLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 
@@ -43,7 +43,15 @@ public class AvailableJobsActivity extends AppCompatActivity {
     private TextView btnSort;
     private RecyclerView rvJobs;
     private LinearLayout emptyState;
-    private ProgressBar progressBar;
+    private ShimmerLayout shimmerJobs;
+
+    /**
+     * True while a fetch is in flight. The category/city Spinners fire their initial
+     * onItemSelected during the first layout pass - after onCreate has already kicked off the
+     * load - so filterJobs() would otherwise flip the "No jobs found" empty state on before any
+     * data has arrived. The skeleton owns the screen until the load resolves.
+     */
+    private boolean isLoading = true;
 
     private FirebaseAuth mAuth;
     private String currentUserId;
@@ -90,7 +98,7 @@ public class AvailableJobsActivity extends AppCompatActivity {
         btnSort = findViewById(R.id.btnSort);
         rvJobs = findViewById(R.id.rvJob);
         emptyState = findViewById(R.id.emptyState);
-        progressBar = findViewById(R.id.progressBar);
+        shimmerJobs = findViewById(R.id.shimmerJobs);
 
         btnBudgetFilter.setOnClickListener(v -> showBudgetDialog());
         btnSort.setOnClickListener(v -> showSortDialog());
@@ -99,7 +107,7 @@ public class AvailableJobsActivity extends AppCompatActivity {
     private void setupToolbar() {
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
-            getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setTitle("Available Jobs");
         }
     }
@@ -204,6 +212,9 @@ public class AvailableJobsActivity extends AppCompatActivity {
                 })
                 .addOnFailureListener(e -> {
                     showLoading(false);
+                    // Resolve the screen on the error path too, otherwise the skeleton goes away
+                    // and leaves nothing behind it.
+                    filterJobs();
                     Log.e(TAG, "Error loading jobs: " + e.getMessage());
                     Toast.makeText(this, "Error loading jobs: " + e.getMessage(),
                             Toast.LENGTH_SHORT).show();
@@ -335,6 +346,12 @@ public class AvailableJobsActivity extends AppCompatActivity {
 
         jobAdapter.notifyDataSetChanged();
 
+        if (isLoading) {
+            // The skeleton owns the screen until the fetch resolves; an empty list here just
+            // means the data has not arrived yet, not that there is nothing to show.
+            return;
+        }
+
         if (filteredJobsList.isEmpty()) {
             rvJobs.setVisibility(View.GONE);
             emptyState.setVisibility(View.VISIBLE);
@@ -347,12 +364,15 @@ public class AvailableJobsActivity extends AppCompatActivity {
     }
 
     private void showLoading(boolean show) {
+        isLoading = show;
         if (show) {
-            progressBar.setVisibility(View.VISIBLE);
+            shimmerJobs.setVisibility(View.VISIBLE);
+            shimmerJobs.showShimmer();
             rvJobs.setVisibility(View.GONE);
             emptyState.setVisibility(View.GONE);
         } else {
-            progressBar.setVisibility(View.GONE);
+            shimmerJobs.hideShimmer();
+            shimmerJobs.setVisibility(View.GONE);
         }
     }
 

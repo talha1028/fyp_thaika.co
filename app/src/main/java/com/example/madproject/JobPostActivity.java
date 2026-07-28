@@ -1,8 +1,11 @@
 package com.example.madproject;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -15,6 +18,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -60,6 +64,21 @@ public class JobPostActivity extends AppCompatActivity {
                     selectedPhotoUris.add(cameraImageUri);
                     photoAdapter.notifyItemInserted(selectedPhotoUris.size() - 1);
                     rvSelectedPhotos.setVisibility(View.VISIBLE);
+                }
+            });
+
+    /**
+     * The manifest declares android.permission.CAMERA, and once an app declares it the system
+     * throws a SecurityException from ACTION_IMAGE_CAPTURE unless it has actually been granted -
+     * so it has to be requested at runtime before the camera can be opened.
+     */
+    private final ActivityResultLauncher<String> cameraPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
+                if (granted) {
+                    openCamera();
+                } else {
+                    Toast.makeText(this, "Camera permission is needed to take a photo",
+                            Toast.LENGTH_SHORT).show();
                 }
             });
 
@@ -300,7 +319,7 @@ public class JobPostActivity extends AppCompatActivity {
                 runOnUiThread(() -> {
                     etJobDescription.setText(response.trim());
                     btnAiGenerateDesc.setEnabled(true);
-                    btnAiGenerateDesc.setText("✨ AI Generate");
+                    btnAiGenerateDesc.setText("✨ Generate description with AI");
                 });
             }
             @Override
@@ -308,7 +327,7 @@ public class JobPostActivity extends AppCompatActivity {
                 runOnUiThread(() -> {
                     Toast.makeText(JobPostActivity.this, "AI error: " + error, Toast.LENGTH_SHORT).show();
                     btnAiGenerateDesc.setEnabled(true);
-                    btnAiGenerateDesc.setText("✨ AI Generate");
+                    btnAiGenerateDesc.setText("✨ Generate description with AI");
                 });
             }
         });
@@ -371,6 +390,15 @@ public class JobPostActivity extends AppCompatActivity {
     }
 
     private void launchCamera() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                == PackageManager.PERMISSION_GRANTED) {
+            openCamera();
+        } else {
+            cameraPermissionLauncher.launch(Manifest.permission.CAMERA);
+        }
+    }
+
+    private void openCamera() {
         try {
             File photoDir = new File(getCacheDir(), "photos");
             photoDir.mkdirs();
@@ -379,7 +407,10 @@ public class JobPostActivity extends AppCompatActivity {
                     getPackageName() + ".provider", photoFile);
             cameraLauncher.launch(cameraImageUri);
         } catch (Exception e) {
-            Toast.makeText(this, "Camera unavailable", Toast.LENGTH_SHORT).show();
+            // Log the cause - swallowing it silently is what made this look like a dead button.
+            Log.e("JobPost", "Could not open camera", e);
+            Toast.makeText(this, "Camera unavailable: " + e.getMessage(),
+                    Toast.LENGTH_SHORT).show();
         }
     }
 

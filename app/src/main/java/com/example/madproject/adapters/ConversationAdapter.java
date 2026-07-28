@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.example.madproject.R;
+import com.example.madproject.helpers.NameFormatter;
 import com.example.madproject.models.Conversation;
 
 import java.text.SimpleDateFormat;
@@ -50,7 +51,7 @@ public class ConversationAdapter extends RecyclerView.Adapter<ConversationAdapte
         Conversation conversation = conversationList.get(position);
 
         // Set user name
-        holder.tvUserName.setText(conversation.getOtherUserName());
+        holder.tvUserName.setText(NameFormatter.capitalize(conversation.getOtherUserName()));
 
         // Set last message
         String lastMsg = conversation.getLastMessage();

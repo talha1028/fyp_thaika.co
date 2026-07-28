@@ -18,10 +18,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.madproject.helpers.KeyboardInsets;
 import com.example.madproject.adapters.MessageAdapter;
 import com.example.madproject.firebase.MessageManager;
 import com.example.madproject.firebase.UserManager;
 import com.google.android.material.appbar.MaterialToolbar;
+import com.example.madproject.helpers.NameFormatter;
 import com.example.madproject.models.Message;
 import com.example.madproject.models.User;
 import com.google.firebase.auth.FirebaseAuth;
@@ -87,9 +89,13 @@ public class ChatActivity extends AppCompatActivity {
 
         initViews();
 
+        // Keep the input row above the keyboard (adjustResize is a no-op under enforced
+        // edge-to-edge on SDK 35+, so the IME inset has to be consumed).
+        KeyboardInsets.liftAboveKeyboard(findViewById(R.id.messageInputContainer));
+
         // Set receiver name in toolbar if provided
         if (receiverName != null && !receiverName.isEmpty()) {
-            tvReceiverName.setText(receiverName);
+            tvReceiverName.setText(NameFormatter.capitalize(receiverName));
         }
 
         setupRecyclerView();
@@ -186,7 +192,7 @@ public class ChatActivity extends AppCompatActivity {
             @Override
             public void onUserLoaded(User user) {
                 receiverUser = user;
-                tvReceiverName.setText(user.getFullName());
+                tvReceiverName.setText(NameFormatter.capitalize(user.getFullName()));
                 Log.d(TAG, "Receiver user loaded: " + user.getFullName());
             }
 

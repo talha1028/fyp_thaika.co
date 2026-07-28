@@ -8,7 +8,6 @@ import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -22,6 +21,7 @@ import com.google.android.material.appbar.MaterialToolbar;
 import com.example.madproject.models.Conversation;
 import com.example.madproject.models.Message;
 import com.example.madproject.models.User;
+import com.example.madproject.views.ShimmerLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 
@@ -38,7 +38,10 @@ public class ConversationsListActivity extends AppCompatActivity {
     private RecyclerView rvConversations;
     private EditText etSearch;
     private LinearLayout emptyState;
-    private ProgressBar progressBar;
+    private ShimmerLayout shimmerConversations;
+
+    /** True while a fetch is in flight - the skeleton owns the screen until it resolves. */
+    private boolean isLoading = true;
 
     private FirebaseAuth mAuth;
     private String currentUserId;
@@ -79,7 +82,7 @@ public class ConversationsListActivity extends AppCompatActivity {
         rvConversations = findViewById(R.id.rvConversations);
         etSearch = findViewById(R.id.etSearch);
         emptyState = findViewById(R.id.emptyState);
-        progressBar = findViewById(R.id.progressBar);
+        shimmerConversations = findViewById(R.id.shimmerConversations);
 
         rvConversations.setLayoutManager(new LinearLayoutManager(this));
     }
@@ -263,16 +266,25 @@ public class ConversationsListActivity extends AppCompatActivity {
     }
 
     private void showLoading(boolean show) {
-        if (progressBar != null) {
-            progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
-        }
+        isLoading = show;
         if (show) {
+            shimmerConversations.setVisibility(View.VISIBLE);
+            shimmerConversations.showShimmer();
             rvConversations.setVisibility(View.GONE);
             emptyState.setVisibility(View.GONE);
+        } else {
+            shimmerConversations.hideShimmer();
+            shimmerConversations.setVisibility(View.GONE);
         }
     }
 
     private void updateEmptyState() {
+        if (isLoading) {
+            // The skeleton owns the screen until the fetch resolves; an empty list here just
+            // means the data has not arrived yet, not that there is nothing to show.
+            return;
+        }
+
         if (filteredList.isEmpty()) {
             rvConversations.setVisibility(View.GONE);
             emptyState.setVisibility(View.VISIBLE);

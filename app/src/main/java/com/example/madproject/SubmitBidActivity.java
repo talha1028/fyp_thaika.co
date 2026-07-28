@@ -19,6 +19,7 @@ import com.example.madproject.models.Bid;
 import com.example.madproject.models.Job;
 import com.example.madproject.models.Notification;
 import com.example.madproject.models.User;
+import com.example.madproject.views.ShimmerLayout;
 import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.UUID;
@@ -30,6 +31,7 @@ public class SubmitBidActivity extends AppCompatActivity {
     private Button btnSubmitBid, btnCancel;
     private android.widget.TextView btnAiEstimate;
     private android.widget.TextView tvJobTitle, tvJobBudget, tvJobTimeline;
+    private ShimmerLayout shimmerJobSummary;
 
     private FirebaseAuth mAuth;
     private String currentUserId;
@@ -76,6 +78,7 @@ public class SubmitBidActivity extends AppCompatActivity {
         tvJobTitle    = findViewById(R.id.tvJobTitle);
         tvJobBudget   = findViewById(R.id.tvJobBudget);
         tvJobTimeline = findViewById(R.id.tvJobTimeline);
+        shimmerJobSummary = findViewById(R.id.shimmerJobSummary);
         aiHelper = new GeminiAIHelper(this);
     }
 
@@ -146,6 +149,7 @@ public class SubmitBidActivity extends AppCompatActivity {
                             if (tvJobTitle    != null) tvJobTitle.setText(job.getTitle());
                             if (tvJobBudget   != null) tvJobBudget.setText("Rs. " + formatCurrency(job.getBudget()));
                             if (tvJobTimeline != null) tvJobTimeline.setText(job.getTimeline());
+                            finishJobSummarySkeleton();
                         }
                     } else {
                         Toast.makeText(this, "Job not found", Toast.LENGTH_SHORT).show();
@@ -153,8 +157,23 @@ public class SubmitBidActivity extends AppCompatActivity {
                     }
                 })
                 .addOnFailureListener(e -> {
+                    // This branch does not finish(), so the skeleton has to be cleared here or the
+                    // summary card shimmers forever behind the toast.
+                    finishJobSummarySkeleton();
                     Toast.makeText(this, "Error loading job details", Toast.LENGTH_SHORT).show();
                 });
+    }
+
+    /** Drop the grey placeholder bars and stop the sweep once the job summary has real values. */
+    private void finishJobSummarySkeleton() {
+        android.widget.TextView[] views = {tvJobTitle, tvJobBudget, tvJobTimeline};
+        for (android.widget.TextView v : views) {
+            if (v == null) continue;
+            v.setBackground(null);
+            v.setMinWidth(0);
+            v.setMinHeight(0);
+        }
+        if (shimmerJobSummary != null) shimmerJobSummary.hideShimmer();
     }
 
     private void submitBid() {

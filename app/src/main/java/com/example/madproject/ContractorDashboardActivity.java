@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -18,8 +17,10 @@ import com.example.madproject.adapters.JobAdapter;
 import com.example.madproject.firebase.JobManager;
 import com.example.madproject.firebase.UserManager;
 import com.example.madproject.helpers.FCMHelper;
+import com.example.madproject.helpers.NameFormatter;
 import com.example.madproject.models.Job;
 import com.example.madproject.models.User;
+import com.example.madproject.views.ShimmerLayout;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
@@ -38,8 +39,8 @@ public class ContractorDashboardActivity extends AppCompatActivity {
     private TextView tvContractorName, tvCategory, tvRating, tvReviews;
     private TextView tvActiveProjectsCount, tvCompletedCount, tvTotalEarnings;
     private TextView tvViewAllJobs;
+    private ShimmerLayout shimmerProfile, shimmerStats, shimmerJobs;
     private CircleImageView ivProfileImage;
-    private Button btnViewProfile;
     private RecyclerView rvAvailableJobs;
     private LinearLayout emptyState;
     private BottomNavigationView bottomNav;
@@ -94,6 +95,9 @@ public class ContractorDashboardActivity extends AppCompatActivity {
         // Refresh jobs when returning
         Log.d(TAG, "onResume - Refreshing available jobs");
         loadAvailableJobs();
+
+        // Guard: this screen is always Home, so the nav must always show Home.
+        bottomNav.setSelectedItemId(R.id.nav_home);
     }
 
     private void initViews() {
@@ -106,11 +110,13 @@ public class ContractorDashboardActivity extends AppCompatActivity {
         tvTotalEarnings = findViewById(R.id.tvTotalEarnings);
         tvViewAllJobs = findViewById(R.id.tvViewAllJobs);
         ivProfileImage = findViewById(R.id.ivProfileImage);
-        btnViewProfile = findViewById(R.id.btnViewProfile);
         rvAvailableJobs = findViewById(R.id.rvAvailableJobs);
         emptyState = findViewById(R.id.emptyState);
         bottomNav = findViewById(R.id.bottomNav);
         fabAIChat = findViewById(R.id.fabAIChat);
+        shimmerProfile = findViewById(R.id.shimmerProfile);
+        shimmerStats = findViewById(R.id.shimmerStats);
+        shimmerJobs = findViewById(R.id.shimmerJobs);
 
         // Create ProgressBar programmatically
         progressBar = new ProgressBar(this);
@@ -150,13 +156,6 @@ public class ContractorDashboardActivity extends AppCompatActivity {
             return false;
         });
 
-        // View Profile Button
-        btnViewProfile.setOnClickListener(v -> {
-            Intent intent = new Intent(ContractorDashboardActivity.this, ContractorProfileActivity.class);
-            intent.putExtra("contractorId", currentUserId);
-            startActivity(intent);
-        });
-
         // View All Jobs
         tvViewAllJobs.setOnClickListener(v -> {
             Intent intent = new Intent(ContractorDashboardActivity.this, AvailableJobsActivity.class);
@@ -164,6 +163,13 @@ public class ContractorDashboardActivity extends AppCompatActivity {
         });
 
         // Bottom Navigation
+        //
+        // Every branch that launches another Activity returns FALSE on purpose. This screen is
+        // Home, so Home must stay the highlighted tab. Returning true would tell the
+        // BottomNavigationView to move the highlight onto the tapped tab, and since these tabs
+        // open a new Activity on top (no finish(), no intent flags), backing out would land here
+        // with e.g. "Jobs" still lit. Returning false runs the action without moving the
+        // highlight, so there is no stale selection to come back to.
         bottomNav.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
 
@@ -171,16 +177,16 @@ public class ContractorDashboardActivity extends AppCompatActivity {
                 return true;
             } else if (id == R.id.nav_jobs) {
                 startActivity(new Intent(ContractorDashboardActivity.this, AvailableJobsActivity.class));
-                return true;
+                return false;
             } else if (id == R.id.nav_projects) {
                 startActivity(new Intent(ContractorDashboardActivity.this, MyProjectsActivity.class));
-                return true;
+                return false;
             } else if (id == R.id.nav_messages) {
                 startActivity(new Intent(ContractorDashboardActivity.this, ConversationsListActivity.class));
-                return true;
+                return false;
             } else if (id == R.id.nav_profile) {
                 startActivity(new Intent(ContractorDashboardActivity.this, SettingsActivity.class));
-                return true;
+                return false;
             }
 
             return false;
@@ -209,6 +215,10 @@ public class ContractorDashboardActivity extends AppCompatActivity {
                     @Override
                     public void onError(String error) {
                         Log.e(TAG, "Error loading contractor: " + error);
+                        // Never leave the skeleton shimmering forever on failure
+                        clearSkeleton(tvContractorName, tvCategory, tvRating, tvReviews);
+                        shimmerProfile.hideShimmer();
+                        finishStatsSkeleton();
                         Toast.makeText(ContractorDashboardActivity.this,
                                 "Error loading contractor data: " + error,
                                 Toast.LENGTH_SHORT).show();
@@ -219,7 +229,7 @@ public class ContractorDashboardActivity extends AppCompatActivity {
     private void updateUI(User user) {
         if (user != null && user.isContractor()) {
             // Update contractor name
-            tvContractorName.setText(user.getFullName());
+            tvContractorName.setText(NameFormatter.capitalize(user.getFullName()));
 
             // Update category
             if (user.getCategory() != null && !user.getCategory().isEmpty()) {
@@ -237,6 +247,9 @@ public class ContractorDashboardActivity extends AppCompatActivity {
 
             // Update reviews count
             tvReviews.setText("(" + user.getTotalReviews() + " reviews)");
+
+            clearSkeleton(tvContractorName, tvCategory, tvRating, tvReviews);
+            shimmerProfile.hideShimmer();
 
             // Update statistics
             // Active projects (jobs in progress assigned to this contractor)
@@ -256,6 +269,20 @@ public class ContractorDashboardActivity extends AppCompatActivity {
         }
     }
 
+    /** Drop the grey placeholder bars once a field has its real value. */
+    private void clearSkeleton(TextView... views) {
+        for (TextView v : views) {
+            v.setBackground(null);
+            v.setMinWidth(0);
+            v.setMinHeight(0);
+        }
+    }
+
+    private void finishStatsSkeleton() {
+        clearSkeleton(tvActiveProjectsCount, tvCompletedCount, tvTotalEarnings);
+        shimmerStats.hideShimmer();
+    }
+
     private void loadActiveProjectsCount() {
         // Count jobs assigned to this contractor with status "in_progress"
         JobManager.getInstance()
@@ -269,11 +296,13 @@ public class ContractorDashboardActivity extends AppCompatActivity {
                         }
                     }
                     tvActiveProjectsCount.setText(String.valueOf(activeCount));
+                    finishStatsSkeleton();
                     Log.d(TAG, "Active projects count: " + activeCount);
                 })
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "Error loading active projects: " + e.getMessage());
                     tvActiveProjectsCount.setText("0");
+                    finishStatsSkeleton();
                 });
     }
 
@@ -323,6 +352,10 @@ public class ContractorDashboardActivity extends AppCompatActivity {
                 })
                 .addOnFailureListener(e -> {
                     showLoading(false);
+                    // Resolve the screen on the error path too, otherwise the skeleton goes away
+                    // and leaves nothing behind it.
+                    rvAvailableJobs.setVisibility(View.GONE);
+                    if (emptyState != null) emptyState.setVisibility(View.VISIBLE);
                     Log.e(TAG, "Error loading open jobs: " + e.getMessage(), e);
                     Toast.makeText(ContractorDashboardActivity.this,
                             "Error loading jobs: " + e.getMessage(),
@@ -342,13 +375,16 @@ public class ContractorDashboardActivity extends AppCompatActivity {
         }
     }
 
+    /** Drives the jobs-list skeleton. The profile and stats groups have their own shimmers. */
     private void showLoading(boolean show) {
         if (show) {
-            Log.d(TAG, "Showing loading state");
-            // Show progress indicator
+            shimmerJobs.setVisibility(View.VISIBLE);
+            shimmerJobs.showShimmer();
+            rvAvailableJobs.setVisibility(View.GONE);
+            if (emptyState != null) emptyState.setVisibility(View.GONE);
         } else {
-            Log.d(TAG, "Hiding loading state");
-            // Hide progress indicator
+            shimmerJobs.hideShimmer();
+            shimmerJobs.setVisibility(View.GONE);
         }
     }
 

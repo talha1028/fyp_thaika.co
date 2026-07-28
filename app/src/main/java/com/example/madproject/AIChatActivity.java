@@ -15,6 +15,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.madproject.helpers.KeyboardInsets;
 import com.example.madproject.adapters.ChatMessageAdapter;
 import com.example.madproject.helpers.GeminiAIHelper;
 import com.example.madproject.models.ChatMessage;
@@ -47,6 +48,11 @@ public class AIChatActivity extends AppCompatActivity {
         setContentView(R.layout.activity_ai_chat);
 
         initViews();
+
+        // Keep the input row above the keyboard (adjustResize is a no-op under enforced
+        // edge-to-edge on SDK 35+, so the IME inset has to be consumed).
+        KeyboardInsets.liftAboveKeyboard(findViewById(R.id.inputContainer));
+
         setupToolbar();
         setupRecyclerView();
         setupSuggestions();

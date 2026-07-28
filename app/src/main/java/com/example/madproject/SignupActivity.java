@@ -7,13 +7,18 @@ import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.OneShotPreDrawListener;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import com.example.madproject.firebase.UserManager;
 import com.example.madproject.models.User;
@@ -27,14 +32,44 @@ public class SignupActivity extends AppCompatActivity {
     private Button createAccountBtn;
     private TextView loginLink;
     private ProgressBar progressBar;
-    private ImageView btnClose;
 
     private FirebaseAuth mAuth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
         setContentView(R.layout.signup_activity);
+
+        // Keep the form clear of the status bar, navigation bar and soft keyboard
+        View formScroll = findViewById(R.id.formScroll);
+        ViewCompat.setOnApplyWindowInsetsListener(formScroll, (v, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+            v.setPadding(0, bars.top, 0, Math.max(bars.bottom, ime.bottom));
+            if (ime.bottom > 0) {
+                // The viewport just shrank. Wait for layout, then scroll the focused
+                // field back above the keyboard if the keyboard now covers it.
+                OneShotPreDrawListener.add(v, () -> {
+                    View focused = getCurrentFocus();
+                    if (focused == null || !(v instanceof ScrollView)) {
+                        return;
+                    }
+                    ScrollView sv = (ScrollView) v;
+                    int[] svXY = new int[2];
+                    int[] focusedXY = new int[2];
+                    sv.getLocationOnScreen(svXY);
+                    focused.getLocationOnScreen(focusedXY);
+                    int gap = (int) (16 * getResources().getDisplayMetrics().density);
+                    int visibleBottom = svXY[1] + sv.getHeight() - sv.getPaddingBottom();
+                    int delta = (focusedXY[1] + focused.getHeight() + gap) - visibleBottom;
+                    if (delta > 0) {
+                        sv.smoothScrollBy(0, delta);
+                    }
+                });
+            }
+            return insets;
+        });
 
         // Initialize Firebase
         mAuth = FirebaseAuth.getInstance();
@@ -57,7 +92,6 @@ public class SignupActivity extends AppCompatActivity {
         password = findViewById(R.id.password);
         createAccountBtn = findViewById(R.id.createAccountBtn);
         loginLink = findViewById(R.id.loginLink);
-        btnClose = findViewById(R.id.btnClose);
 
         // Add ProgressBar to your layout or create programmatically
         // For now, we'll create it programmatically if not in XML
@@ -77,7 +111,6 @@ public class SignupActivity extends AppCompatActivity {
         });
 
         // Close Button
-        btnClose.setOnClickListener(v -> finish());
     }
 
     private void setupRoleSpinner() {

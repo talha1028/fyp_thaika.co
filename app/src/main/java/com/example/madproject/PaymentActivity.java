@@ -16,6 +16,7 @@ import androidx.cardview.widget.CardView;
 import com.example.madproject.firebase.JobManager;
 import com.example.madproject.firebase.NotificationManager;
 import com.example.madproject.firebase.PaymentManager;
+import com.example.madproject.helpers.NameFormatter;
 import com.example.madproject.models.Job;
 import com.example.madproject.models.Notification;
 import com.example.madproject.models.Payment;
@@ -146,7 +147,7 @@ public class PaymentActivity extends AppCompatActivity {
                 : total * FINAL_PERCENT;
 
         tvJobTitle.setText(currentJob.getTitle());
-        tvContractorName.setText("Contractor: " + currentJob.getAssignedContractorName());
+        tvContractorName.setText("Contractor: " + NameFormatter.capitalize(currentJob.getAssignedContractorName()));
         tvAmount.setText(formatRs(amount));
 
         if (paymentType.equals("deposit")) {

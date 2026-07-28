@@ -100,52 +100,67 @@
                 android:layout_marginTop="8dp"
                 android:layout_marginBottom="4dp" />
 
+            <!--
+              Two rows rather than one. All three used to be wrap_content pills in a match_parent
+              row: their combined natural width overflowed the screen, so the last one was squeezed
+              until "Permit Check" wrapped to a second line and got clipped by the fixed 32dp
+              height. AI Generate now takes a full-width primary row and the other two split an
+              equal-weight row, so every label fits at any screen width.
+            -->
+            <TextView
+                android:id="@+id/btnAiGenerateDesc"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="✨ Generate description with AI"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="@android:color/white"
+                android:background="@drawable/bg_button_purple"
+                android:gravity="center"
+                android:maxLines="1"
+                android:layout_marginTop="4dp"
+                android:foreground="?attr/selectableItemBackground" />
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
+                android:layout_marginTop="8dp"
                 android:layout_marginBottom="16dp">
 
                 <TextView
-                    android:id="@+id/btnAiGenerateDesc"
-                    android:layout_width="wrap_content"
-                    android:layout_height="32dp"
-                    android:text="✨ AI Generate"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:textColor="#7C4DFF"
-                    android:background="@drawable/bg_pill_unselected"
-                    android:paddingStart="12dp"
-                    android:paddingEnd="12dp"
-                    android:gravity="center"
-                    android:layout_marginEnd="8dp" />
-
-                <TextView
                     android:id="@+id/btnAiContractorTip"
-                    android:layout_width="wrap_content"
-                    android:layout_height="32dp"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_weight="1"
                     android:text="🔍 Contractor Advice"
-                    android:textSize="12sp"
+                    android:textSize="13sp"
                     android:textStyle="bold"
                     android:textColor="#7C4DFF"
-                    android:background="@drawable/bg_pill_unselected"
-                    android:paddingStart="12dp"
-                    android:paddingEnd="12dp"
+                    android:background="@drawable/bg_ai_pill_purple"
+                    android:paddingStart="4dp"
+                    android:paddingEnd="4dp"
                     android:gravity="center"
-                    android:layout_marginEnd="8dp" />
+                    android:maxLines="1"
+                    android:layout_marginEnd="6dp"
+                    android:foreground="?attr/selectableItemBackground" />
 
                 <TextView
                     android:id="@+id/btnAiPermitCheck"
-                    android:layout_width="wrap_content"
-                    android:layout_height="32dp"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_weight="1"
                     android:text="📋 Permit Check"
-                    android:textSize="12sp"
+                    android:textSize="13sp"
                     android:textStyle="bold"
                     android:textColor="#FF9800"
-                    android:background="@drawable/bg_pill_unselected"
-                    android:paddingStart="12dp"
-                    android:paddingEnd="12dp"
-                    android:gravity="center" />
+                    android:background="@drawable/bg_ai_pill_amber"
+                    android:paddingStart="4dp"
+                    android:paddingEnd="4dp"
+                    android:gravity="center"
+                    android:maxLines="1"
+                    android:layout_marginStart="6dp"
+                    android:foreground="?attr/selectableItemBackground" />
             </LinearLayout>
 
             <!-- Budget -->

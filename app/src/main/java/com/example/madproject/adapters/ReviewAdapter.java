@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.example.madproject.R;
+import com.example.madproject.helpers.NameFormatter;
 import com.example.madproject.models.Review;
 
 import java.util.List;
@@ -39,7 +40,7 @@ public class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ReviewView
         Review review = reviewList.get(position);
 
         // Set reviewer name
-        holder.tvReviewerName.setText(review.getClientName());
+        holder.tvReviewerName.setText(NameFormatter.capitalize(review.getClientName()));
 
         // Set review date
         holder.tvReviewDate.setText(getRelativeTime(review.getReviewDate()));

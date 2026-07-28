@@ -30,6 +30,7 @@ import com.example.madproject.models.Bid;
 import com.example.madproject.models.Job;
 import com.example.madproject.models.Notification;
 import com.example.madproject.models.Review;
+import com.example.madproject.views.ShimmerLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 
@@ -43,7 +44,8 @@ public class JobDetailActivity extends AppCompatActivity {
             tvTimeline, tvTotalBids, tvLocation, tvStatus, btnSortBids;
     private RecyclerView rvBids;
     private LinearLayout emptyState;
-    private ImageView btnEdit, btnShare;
+    private ShimmerLayout shimmerJobInfo, shimmerBids;
+    private ImageView btnEdit;
     private Button btnSubmitBid;
     private ProgressBar progressBar;
 
@@ -121,8 +123,9 @@ public class JobDetailActivity extends AppCompatActivity {
         tvStatus = findViewById(R.id.tvStatus);
         rvBids = findViewById(R.id.rvBids);
         emptyState = findViewById(R.id.emptyState);
+        shimmerJobInfo = findViewById(R.id.shimmerJobInfo);
+        shimmerBids = findViewById(R.id.shimmerBids);
         btnEdit = findViewById(R.id.btnEdit);
-        btnShare = findViewById(R.id.btnShare);
         btnSortBids = findViewById(R.id.btnSortBids);
         btnSubmitBid = findViewById(R.id.btnSubmitBid);
 
@@ -201,7 +204,6 @@ public class JobDetailActivity extends AppCompatActivity {
 
     private void setupClickListeners() {
         btnEdit.setOnClickListener(v -> editJob());
-        btnShare.setOnClickListener(v -> shareJob());
         btnSortBids.setOnClickListener(v -> showSortDialog());
 
         if (btnSubmitBid != null) {
@@ -231,9 +233,45 @@ public class JobDetailActivity extends AppCompatActivity {
                 })
                 .addOnFailureListener(e -> {
                     showLoading(false);
+                    // Never leave the skeleton shimmering forever on failure.
+                    finishJobInfoSkeleton();
                     Toast.makeText(this, "Error loading job: " + e.getMessage(),
                             Toast.LENGTH_SHORT).show();
                 });
+    }
+
+    /** Drop the grey placeholder bars once a field has its real value. */
+    private void clearSkeleton(TextView... views) {
+        for (TextView v : views) {
+            v.setBackground(null);
+            v.setMinWidth(0);
+            v.setMinHeight(0);
+        }
+    }
+
+    /**
+     * Stop the job-info skeleton. tvStatus is handled separately: its skeleton replaced the
+     * bg_status_green pill in XML, so it has to be put back rather than nulled out.
+     */
+    private void finishJobInfoSkeleton() {
+        clearSkeleton(tvJobTitle, tvCategory, tvPostedDate, tvDescription,
+                tvBudget, tvTimeline, tvTotalBids, tvLocation);
+        tvStatus.setMinWidth(0);
+        tvStatus.setMinHeight(0);
+        tvStatus.setBackgroundResource(R.drawable.bg_status_green);
+        shimmerJobInfo.hideShimmer();
+    }
+
+    private void showBidsLoading(boolean show) {
+        if (show) {
+            shimmerBids.setVisibility(View.VISIBLE);
+            shimmerBids.showShimmer();
+            rvBids.setVisibility(View.GONE);
+            emptyState.setVisibility(View.GONE);
+        } else {
+            shimmerBids.hideShimmer();
+            shimmerBids.setVisibility(View.GONE);
+        }
     }
 
     private void displayJobDetails(Job job) {
@@ -265,6 +303,8 @@ public class JobDetailActivity extends AppCompatActivity {
 
         // Set location
         tvLocation.setText(job.getLocation());
+
+        finishJobInfoSkeleton();
 
         // Show/hide buttons based on user role
         boolean isJobOwner = currentUserId.equals(job.getClientId());
@@ -394,12 +434,12 @@ public class JobDetailActivity extends AppCompatActivity {
     }
 
     private void loadBids() {
-        showLoading(true);
+        showBidsLoading(true);
 
         BidManager.getInstance()
                 .getBidsByJob(jobId)
                 .addOnSuccessListener(queryDocumentSnapshots -> {
-                    showLoading(false);
+                    showBidsLoading(false);
 
                     bidList.clear();
 
@@ -426,7 +466,11 @@ public class JobDetailActivity extends AppCompatActivity {
                     }
                 })
                 .addOnFailureListener(e -> {
-                    showLoading(false);
+                    showBidsLoading(false);
+                    // Resolve the section on the error path too, otherwise the skeleton goes away
+                    // and leaves nothing behind it.
+                    rvBids.setVisibility(View.GONE);
+                    emptyState.setVisibility(View.VISIBLE);
                     Toast.makeText(this, "Error loading bids: " + e.getMessage(),
                             Toast.LENGTH_SHORT).show();
                 });
@@ -882,21 +926,6 @@ public class JobDetailActivity extends AppCompatActivity {
         Intent intent = new Intent(this, SubmitBidActivity.class);
         intent.putExtra("jobId", jobId);
         startActivity(intent);
-    }
-
-    private void shareJob() {
-        if (currentJob == null) return;
-
-        String shareText = "Check out this job on RebuildPak:\n\n" +
-                currentJob.getTitle() + "\n" +
-                "Budget: Rs. " + formatCurrency(currentJob.getBudget()) + "\n" +
-                "Location: " + currentJob.getLocation() + "\n" +
-                "Category: " + currentJob.getCategory();
-
-        Intent shareIntent = new Intent(Intent.ACTION_SEND);
-        shareIntent.setType("text/plain");
-        shareIntent.putExtra(Intent.EXTRA_TEXT, shareText);
-        startActivity(Intent.createChooser(shareIntent, "Share Job"));
     }
 
     private void setStatusStyle(String status) {

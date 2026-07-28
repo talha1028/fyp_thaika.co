@@ -28,11 +28,25 @@
                 android:textColor="#212121" />
         </com.google.android.material.appbar.MaterialToolbar>
 
+        <!-- Loading skeleton. Visible by default so it paints on the very first frame; the real
+             form starts gone and is swapped in once the job has been fetched, so the user never
+             sees empty hinted fields on a form that is meant to be prefilled. -->
+        <com.example.madproject.views.ShimmerLayout
+            android:id="@+id/shimmerForm"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/toolbar">
+
+            <include layout="@layout/view_job_edit_skeleton" />
+        </com.example.madproject.views.ShimmerLayout>
+
         <LinearLayout
+            android:id="@+id/formContent"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="20dp"
+            android:visibility="gone"
             app:layout_constraintTop_toBottomOf="@id/toolbar">
 
             <!-- Job Title -->

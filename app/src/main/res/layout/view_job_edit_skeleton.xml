@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Loading placeholder for the activity_job_edit form. Mirrors the label + field rhythm of the real
+  form (including the 120dp description box) so the page does not jump when the job is prefilled.
+  No ids - it is inert and lives inside a ShimmerLayout.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <!-- Job Title -->
+    <View
+        android:layout_width="72dp"
+        android:layout_height="14dp"
+        android:background="@drawable/bg_skeleton" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/bg_skeleton" />
+
+    <!-- Category -->
+    <View
+        android:layout_width="68dp"
+        android:layout_height="14dp"
+        android:background="@drawable/bg_skeleton" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/bg_skeleton" />
+
+    <!-- Description -->
+    <View
+        android:layout_width="84dp"
+        android:layout_height="14dp"
+        android:background="@drawable/bg_skeleton" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="120dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/bg_skeleton" />
+
+    <!-- Budget -->
+    <View
+        android:layout_width="92dp"
+        android:layout_height="14dp"
+        android:background="@drawable/bg_skeleton" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/bg_skeleton" />
+
+    <!-- City -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="14dp"
+        android:background="@drawable/bg_skeleton" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:background="@drawable/bg_skeleton" />
+
+    <!-- Address (no label in the real form) -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/bg_skeleton" />
+
+    <!-- Timeline -->
+    <View
+        android:layout_width="120dp"
+        android:layout_height="14dp"
+        android:background="@drawable/bg_skeleton" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="24dp"
+        android:background="@drawable/bg_skeleton" />
+
+    <!-- Save / Cancel -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="@drawable/bg_skeleton" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/bg_skeleton" />
+</LinearLayout>

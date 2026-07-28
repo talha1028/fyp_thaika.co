@@ -12,6 +12,7 @@ import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.madproject.R;
+import com.example.madproject.helpers.NameFormatter;
 import com.example.madproject.models.Bid;
 
 import java.text.NumberFormat;
@@ -55,7 +56,7 @@ public class BidAdapter extends RecyclerView.Adapter<BidAdapter.BidViewHolder> {
         Bid bid = bidList.get(position);
 
         // Set contractor name
-        holder.tvContractorName.setText(bid.getContractorName());
+        holder.tvContractorName.setText(NameFormatter.capitalize(bid.getContractorName()));
 
         // Set category
         if (bid.getContractorCategory() != null) {

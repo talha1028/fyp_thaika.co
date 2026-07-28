@@ -15,6 +15,8 @@ import androidx.appcompat.widget.SwitchCompat;
 import androidx.appcompat.widget.Toolbar;
 
 import com.example.madproject.firebase.UserManager;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.EmailAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
@@ -46,7 +48,7 @@ public class SettingsActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
-                getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+                getSupportActionBar().setDisplayHomeAsUpEnabled(true);
                 getSupportActionBar().setTitle("");
             }
 
@@ -67,25 +69,25 @@ public class SettingsActivity extends AppCompatActivity {
         btnChangePassword.setOnClickListener(v -> showChangePasswordDialog());
 
         btnPrivacyPolicy.setOnClickListener(v -> showInfoDialog("Privacy Policy",
-                "RebuildPak collects personal information (name, phone, email) to connect clients " +
+                "Thaika.co collects personal information (name, phone, email) to connect clients " +
                 "with contractors. Your data is stored securely on Firebase and is never sold to third parties. " +
                 "Location data is used only to match you with nearby contractors. " +
                 "You may request deletion of your account at any time by contacting support."));
 
         btnTermsConditions.setOnClickListener(v -> showInfoDialog("Terms and Conditions",
-                "By using RebuildPak you agree to:\n\n" +
+                "By using Thaika.co you agree to:\n\n" +
                 "• Use the platform only for legitimate construction services\n" +
                 "• Provide accurate information in job posts and bids\n" +
                 "• Complete payment obligations once a bid is accepted\n" +
                 "• Not engage in fraudulent activity or fake reviews\n" +
                 "• Resolve disputes through the in-app process\n\n" +
-                "RebuildPak is not liable for work quality or contractor performance. " +
+                "Thaika.co is not liable for work quality or contractor performance. " +
                 "All transactions are between clients and contractors directly."));
 
         btnHelp.setOnClickListener(v -> showInfoDialog("Help & Support",
                 "Need help? Contact us:\n\n" +
-                "📧 Email: support@rebuildpak.com\n" +
-                "📞 Phone: +92-300-REBUILD\n" +
+                "📧 Email: support@thaika.co\n" +
+                "📞 Phone: +92-300-THAIKA\n" +
                 "⏰ Hours: Mon–Fri, 9am–6pm PKT\n\n" +
                 "Common issues:\n" +
                 "• Bid not showing — refresh the job page\n" +
@@ -116,33 +118,18 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private void showChangePasswordDialog() {
-        LinearLayout layout = new LinearLayout(this);
-        layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setPadding(48, 24, 48, 8);
+        View content = getLayoutInflater().inflate(R.layout.dialog_change_password, null);
 
-        EditText etCurrent = new EditText(this);
-        etCurrent.setHint("Current password");
-        etCurrent.setInputType(android.text.InputType.TYPE_CLASS_TEXT |
-                android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
-        layout.addView(etCurrent);
+        TextInputLayout tilCurrent = content.findViewById(R.id.tilCurrent);
+        TextInputLayout tilNew = content.findViewById(R.id.tilNew);
+        TextInputLayout tilConfirm = content.findViewById(R.id.tilConfirm);
+        EditText etCurrent = content.findViewById(R.id.etCurrentPassword);
+        EditText etNew = content.findViewById(R.id.etNewPassword);
+        EditText etConfirm = content.findViewById(R.id.etConfirmPassword);
 
-        EditText etNew = new EditText(this);
-        etNew.setHint("New password (min 6 characters)");
-        etNew.setInputType(android.text.InputType.TYPE_CLASS_TEXT |
-                android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
-        etNew.setPadding(0, 24, 0, 0);
-        layout.addView(etNew);
-
-        EditText etConfirm = new EditText(this);
-        etConfirm.setHint("Confirm new password");
-        etConfirm.setInputType(android.text.InputType.TYPE_CLASS_TEXT |
-                android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
-        etConfirm.setPadding(0, 16, 0, 0);
-        layout.addView(etConfirm);
-
-        AlertDialog dialog = new AlertDialog.Builder(this)
+        AlertDialog dialog = new MaterialAlertDialogBuilder(this)
                 .setTitle("Change Password")
-                .setView(layout)
+                .setView(content)
                 .setPositiveButton("Update", null)
                 .setNegativeButton("Cancel", null)
                 .create();
@@ -153,16 +140,22 @@ public class SettingsActivity extends AppCompatActivity {
                 String newPass = etNew.getText().toString().trim();
                 String confirm = etConfirm.getText().toString().trim();
 
+                // Clear any error from a previous attempt, otherwise a fixed field keeps its
+                // red outline and the layout stays expanded.
+                tilCurrent.setError(null);
+                tilNew.setError(null);
+                tilConfirm.setError(null);
+
                 if (TextUtils.isEmpty(current)) {
-                    etCurrent.setError("Enter current password");
+                    tilCurrent.setError("Enter current password");
                     return;
                 }
                 if (newPass.length() < 6) {
-                    etNew.setError("Min 6 characters");
+                    tilNew.setError("Min 6 characters");
                     return;
                 }
                 if (!newPass.equals(confirm)) {
-                    etConfirm.setError("Passwords do not match");
+                    tilConfirm.setError("Passwords do not match");
                     return;
                 }
                 dialog.dismiss();

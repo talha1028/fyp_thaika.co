@@ -52,6 +52,11 @@
                 app:cardElevation="2dp"
                 app:cardBackgroundColor="#7C4DFF">
 
+                <com.example.madproject.views.ShimmerLayout
+                    android:id="@+id/shimmerWelcome"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -62,7 +67,10 @@
                         android:id="@+id/tvWelcome"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Welcome back!"
+                        android:background="@drawable/bg_skeleton_light"
+                        android:minWidth="140dp"
+                        android:minHeight="22dp"
+                        tools:text="Welcome back!"
                         android:textColor="@android:color/white"
                         android:textSize="16sp"
                         />
@@ -71,7 +79,10 @@
                         android:id="@+id/tvUserName"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="User Name"
+                        android:background="@drawable/bg_skeleton_light"
+                        android:minWidth="200dp"
+                        android:minHeight="32dp"
+                        tools:text="User Name"
                         android:textColor="@android:color/white"
                         android:textSize="24sp"
                         android:textStyle="bold"
@@ -85,6 +96,8 @@
                         android:textSize="14sp"
                         android:layout_marginTop="8dp" />
                 </LinearLayout>
+
+                </com.example.madproject.views.ShimmerLayout>
             </androidx.cardview.widget.CardView>
 
             <!-- Quick Actions -->
@@ -97,12 +110,17 @@
                 android:textColor="#212121"
                 android:layout_marginBottom="12dp" />
 
+            <!-- paddingBottom + clip flags give the cards' 2dp elevation shadow somewhere to draw,
+                 so their bottom edges are not shaved by the row's bounds. -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:weightSum="2"
-                android:layout_marginBottom="16dp">
+                android:layout_marginBottom="16dp"
+                android:paddingBottom="6dp"
+                android:clipToPadding="false"
+                android:clipChildren="false">
 
                 <!-- Post Job Button -->
                 <androidx.cardview.widget.CardView
@@ -206,6 +224,25 @@
                     android:textStyle="bold" />
             </LinearLayout>
 
+            <!-- Loading skeleton for the jobs list. Visible by default so it paints on the very
+                 first frame, before any Java runs. Fewer rows than the full My Jobs screen - this
+                 is a preview list inside a ScrollView. -->
+            <com.example.madproject.views.ShimmerLayout
+                android:id="@+id/shimmerJobs"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <include layout="@layout/item_job_card_skeleton" />
+                    <include layout="@layout/item_job_card_skeleton" />
+                    <include layout="@layout/item_job_card_skeleton" />
+                </LinearLayout>
+            </com.example.madproject.views.ShimmerLayout>
+
             <!-- Jobs RecyclerView -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvMyJobs"
@@ -255,7 +292,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
-        android:src="@drawable/ic_ai_bot"
+        android:src="@drawable/ic_chat"
         android:contentDescription="AI Assistant"
         app:backgroundTint="#7C4DFF"
         app:tint="@android:color/white"

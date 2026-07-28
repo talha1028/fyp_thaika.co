@@ -21,6 +21,7 @@ import androidx.appcompat.widget.Toolbar;
 import com.bumptech.glide.Glide;
 import com.example.madproject.firebase.UserManager;
 import com.example.madproject.models.User;
+import com.example.madproject.views.ShimmerLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
@@ -35,6 +36,8 @@ public class EditProfileActivity extends AppCompatActivity {
     private Button btnSaveProfile, btnCancel;
     private ProgressBar progressBar;
     private TextView tvPhoneVerifyStatus;
+    private ShimmerLayout shimmerForm;
+    private View formContent;
 
     private FirebaseAuth mAuth;
     private StorageReference storageRef;
@@ -91,6 +94,8 @@ public class EditProfileActivity extends AppCompatActivity {
         btnSaveProfile = findViewById(R.id.btnSaveProfile);
         btnCancel = findViewById(R.id.btnCancel);
         tvPhoneVerifyStatus = findViewById(R.id.tvPhoneVerifyStatus);
+        shimmerForm = findViewById(R.id.shimmerForm);
+        formContent = findViewById(R.id.formContent);
 
         // Try to find ProgressBar
         progressBar = findViewById(R.id.progressBar);
@@ -140,21 +145,40 @@ public class EditProfileActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Swap between the skeleton and the real form. Deliberately separate from showLoading(),
+     * which is shared with saveProfile() and uploadProfilePicture() - reusing it would make the
+     * whole form vanish into a skeleton every time the user hits Save.
+     */
+    private void showFormSkeleton(boolean show) {
+        if (show) {
+            shimmerForm.setVisibility(View.VISIBLE);
+            shimmerForm.showShimmer();
+            formContent.setVisibility(View.GONE);
+        } else {
+            shimmerForm.hideShimmer();
+            shimmerForm.setVisibility(View.GONE);
+            formContent.setVisibility(View.VISIBLE);
+        }
+    }
+
     private void loadProfile() {
-        showLoading(true);
+        showFormSkeleton(true);
 
         UserManager.getInstance()
                 .getUserObject(currentUserId, new UserManager.OnUserLoadedListener() {
                     @Override
                     public void onUserLoaded(User user) {
-                        showLoading(false);
+                        showFormSkeleton(false);
                         currentUser = user;
                         populateFields(user);
                     }
 
                     @Override
                     public void onError(String error) {
-                        showLoading(false);
+                        // This branch does not finish(), so the skeleton has to be cleared here
+                        // or the form shimmers forever behind the toast.
+                        showFormSkeleton(false);
                         Toast.makeText(EditProfileActivity.this,
                                 "Error loading profile: " + error, Toast.LENGTH_SHORT).show();
                     }
