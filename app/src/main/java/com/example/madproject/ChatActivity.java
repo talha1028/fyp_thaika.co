@@ -18,6 +18,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.madproject.helpers.KeyboardInsets;
 import com.example.madproject.adapters.MessageAdapter;
 import com.example.madproject.firebase.MessageManager;
 import com.example.madproject.firebase.UserManager;
@@ -87,6 +88,10 @@ public class ChatActivity extends AppCompatActivity {
         Log.d(TAG, "Chat ID: " + chatId);
 
         initViews();
+
+        // Keep the input row above the keyboard (adjustResize is a no-op under enforced
+        // edge-to-edge on SDK 35+, so the IME inset has to be consumed).
+        KeyboardInsets.liftAboveKeyboard(findViewById(R.id.messageInputContainer));
 
         // Set receiver name in toolbar if provided
         if (receiverName != null && !receiverName.isEmpty()) {

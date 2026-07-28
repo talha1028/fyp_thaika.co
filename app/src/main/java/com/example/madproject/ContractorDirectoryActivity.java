@@ -8,11 +8,9 @@ import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -20,7 +18,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.madproject.adapters.ContractorAdapter;
 import com.example.madproject.firebase.UserManager;
 import com.example.madproject.models.User;
+import com.example.madproject.views.ShimmerLayout;
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.firebase.firestore.DocumentSnapshot;
 
 import java.util.ArrayList;
@@ -33,7 +33,10 @@ public class ContractorDirectoryActivity extends AppCompatActivity {
 
     private RecyclerView rvContractors;
     private EditText etSearch;
-    private ProgressBar progressBar;
+    private ShimmerLayout shimmerContractors;
+
+    /** True while a fetch is in flight - the skeleton owns the screen until it resolves. */
+    private boolean isLoading = true;
     private LinearLayout emptyState;
     private TextView tvResultsCount;
     private TextView btnSort;
@@ -74,7 +77,7 @@ public class ContractorDirectoryActivity extends AppCompatActivity {
 
         rvContractors = findViewById(R.id.rvContractors);
         etSearch = findViewById(R.id.etSearch);
-        progressBar = findViewById(R.id.progressBar);
+        shimmerContractors = findViewById(R.id.shimmerContractors);
         emptyState = findViewById(R.id.emptyState);
         tvResultsCount = findViewById(R.id.tvResultsCount);
         btnSort = findViewById(R.id.btnSort);
@@ -177,46 +180,25 @@ public class ContractorDirectoryActivity extends AppCompatActivity {
             if (minExperience >= expValues[i]) { currentExpIdx = i; break; }
         }
 
-        final int[] selectedRatingIdx = {currentRatingIdx};
-        final int[] selectedExpIdx = {currentExpIdx};
+        View content = getLayoutInflater().inflate(R.layout.dialog_filter_contractors, null);
 
-        LinearLayout layout = new LinearLayout(this);
-        layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setPadding(48, 24, 48, 8);
-
-        TextView tvRatingLabel = new TextView(this);
-        tvRatingLabel.setText("Minimum Rating");
-        tvRatingLabel.setTextSize(14);
-        tvRatingLabel.setTextColor(0xFF212121);
-        tvRatingLabel.setPadding(0, 0, 0, 8);
-        layout.addView(tvRatingLabel);
-
-        android.widget.Spinner spinnerRating = new android.widget.Spinner(this);
+        android.widget.Spinner spinnerRating = content.findViewById(R.id.spinnerMinRating);
         android.widget.ArrayAdapter<String> ratingAdapter = new android.widget.ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_item, ratingOptions);
         ratingAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerRating.setAdapter(ratingAdapter);
-        spinnerRating.setSelection(selectedRatingIdx[0]);
-        layout.addView(spinnerRating);
+        spinnerRating.setSelection(currentRatingIdx);
 
-        TextView tvExpLabel = new TextView(this);
-        tvExpLabel.setText("Minimum Experience");
-        tvExpLabel.setTextSize(14);
-        tvExpLabel.setTextColor(0xFF212121);
-        tvExpLabel.setPadding(0, 24, 0, 8);
-        layout.addView(tvExpLabel);
-
-        android.widget.Spinner spinnerExp = new android.widget.Spinner(this);
+        android.widget.Spinner spinnerExp = content.findViewById(R.id.spinnerMinExperience);
         android.widget.ArrayAdapter<String> expAdapter = new android.widget.ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_item, expOptions);
         expAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerExp.setAdapter(expAdapter);
-        spinnerExp.setSelection(selectedExpIdx[0]);
-        layout.addView(spinnerExp);
+        spinnerExp.setSelection(currentExpIdx);
 
-        new AlertDialog.Builder(this)
+        new MaterialAlertDialogBuilder(this)
                 .setTitle("Filter Contractors")
-                .setView(layout)
+                .setView(content)
                 .setPositiveButton("Apply", (d, w) -> {
                     minRating = ratingValues[spinnerRating.getSelectedItemPosition()];
                     minExperience = expValues[spinnerExp.getSelectedItemPosition()];
@@ -234,7 +216,7 @@ public class ContractorDirectoryActivity extends AppCompatActivity {
         if (btnSort == null) return;
         btnSort.setOnClickListener(v -> {
             String[] options = {"Highest Rating", "Most Reviews", "Most Experience", "Most Projects"};
-            new AlertDialog.Builder(this)
+            new MaterialAlertDialogBuilder(this)
                     .setTitle("Sort Contractors")
                     .setItems(options, (d, which) -> {
                         switch (which) {
@@ -321,16 +303,25 @@ public class ContractorDirectoryActivity extends AppCompatActivity {
     }
 
     private void showLoading(boolean show) {
-        if (progressBar != null) {
-            progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
-        }
+        isLoading = show;
         if (show) {
+            shimmerContractors.setVisibility(View.VISIBLE);
+            shimmerContractors.showShimmer();
             rvContractors.setVisibility(View.GONE);
             if (emptyState != null) emptyState.setVisibility(View.GONE);
+        } else {
+            shimmerContractors.hideShimmer();
+            shimmerContractors.setVisibility(View.GONE);
         }
     }
 
     private void updateEmptyState() {
+        if (isLoading) {
+            // The skeleton owns the screen until the fetch resolves; an empty list here just
+            // means the data has not arrived yet, not that there is nothing to show.
+            return;
+        }
+
         if (filteredList.isEmpty()) {
             rvContractors.setVisibility(View.GONE);
             if (emptyState != null) emptyState.setVisibility(View.VISIBLE);
