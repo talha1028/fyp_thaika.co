@@ -61,6 +61,7 @@ public class BidAdapter extends RecyclerView.Adapter<BidAdapter.BidViewHolder> {
         // Set category
         if (bid.getContractorCategory() != null) {
             holder.tvContractorCategory.setText(bid.getContractorCategory());
+            holder.tvContractorCategory.setVisibility(View.VISIBLE);
         } else {
             holder.tvContractorCategory.setVisibility(View.GONE);
         }
