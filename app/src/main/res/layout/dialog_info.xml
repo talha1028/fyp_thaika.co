@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Shared body for the read-only info dialogs in Settings (Privacy Policy, Terms and Conditions,
+  Help & Support). Replaces the bare AlertDialog those used, which rendered as unstyled system
+  text with no icon and no scroll bound.
+
+  The ScrollView carries layout_weight so it is the only part that shrinks: the header and the
+  dismiss button stay pinned when the body is long enough to scroll (Terms is the tall one).
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_dialog">
+
+    <!-- Header: icon badge + title/subtitle -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:paddingTop="24dp"
+        android:paddingBottom="18dp">
+
+        <FrameLayout
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="@drawable/bg_dialog_icon_circle">
+
+            <ImageView
+                android:id="@+id/ivInfoIcon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_privacy"
+                android:contentDescription="@null" />
+        </FrameLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="14dp">
+
+            <TextView
+                android:id="@+id/tvInfoTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Privacy Policy"
+                android:textSize="19sp"
+                android:textStyle="bold"
+                android:textColor="#212121" />
+
+            <TextView
+                android:id="@+id/tvInfoSubtitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="How we handle your data"
+                android:textSize="12sp"
+                android:textColor="#7C4DFF"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#EEEAF6" />
+
+    <!-- Body -->
+    <ScrollView
+        android:id="@+id/scrollInfo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:scrollbars="none"
+        android:fillViewport="false">
+
+        <TextView
+            android:id="@+id/tvInfoMessage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
+            android:paddingTop="18dp"
+            android:paddingBottom="18dp"
+            android:textSize="14sp"
+            android:textColor="#4A4A4A"
+            android:lineSpacingMultiplier="1.4"
+            android:textIsSelectable="true"
+            android:text="Body text" />
+    </ScrollView>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#EEEAF6" />
+
+    <!-- Dismiss -->
+    <TextView
+        android:id="@+id/btnInfoDismiss"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginTop="18dp"
+        android:layout_marginBottom="20dp"
+        android:background="@drawable/bg_button_accent"
+        android:gravity="center"
+        android:text="Got it"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:textColor="#FFFFFF"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?attr/selectableItemBackground" />
+</LinearLayout>
