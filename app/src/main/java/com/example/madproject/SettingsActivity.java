@@ -1,12 +1,16 @@
 package com.example.madproject;
 
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
@@ -68,32 +72,41 @@ public class SettingsActivity extends AppCompatActivity {
 
         btnChangePassword.setOnClickListener(v -> showChangePasswordDialog());
 
-        btnPrivacyPolicy.setOnClickListener(v -> showInfoDialog("Privacy Policy",
+        btnPrivacyPolicy.setOnClickListener(v -> showInfoDialog(
+                "Privacy Policy",
+                "How we handle your data",
+                R.drawable.ic_privacy,
                 "Thaika.co collects personal information (name, phone, email) to connect clients " +
                 "with contractors. Your data is stored securely on Firebase and is never sold to third parties. " +
                 "Location data is used only to match you with nearby contractors. " +
                 "You may request deletion of your account at any time by contacting support."));
 
-        btnTermsConditions.setOnClickListener(v -> showInfoDialog("Terms and Conditions",
+        btnTermsConditions.setOnClickListener(v -> showInfoDialog(
+                "Terms and Conditions",
+                "The rules of using Thaika.co",
+                R.drawable.ic_terms,
                 "By using Thaika.co you agree to:\n\n" +
-                "• Use the platform only for legitimate construction services\n" +
-                "• Provide accurate information in job posts and bids\n" +
-                "• Complete payment obligations once a bid is accepted\n" +
-                "• Not engage in fraudulent activity or fake reviews\n" +
-                "• Resolve disputes through the in-app process\n\n" +
+                "•  Use the platform only for legitimate construction services\n\n" +
+                "•  Provide accurate information in job posts and bids\n\n" +
+                "•  Complete payment obligations once a bid is accepted\n\n" +
+                "•  Not engage in fraudulent activity or fake reviews\n\n" +
+                "•  Resolve disputes through the in-app process\n\n" +
                 "Thaika.co is not liable for work quality or contractor performance. " +
                 "All transactions are between clients and contractors directly."));
 
-        btnHelp.setOnClickListener(v -> showInfoDialog("Help & Support",
-                "Need help? Contact us:\n\n" +
-                "📧 Email: support@thaika.co\n" +
-                "📞 Phone: +92-300-THAIKA\n" +
-                "⏰ Hours: Mon–Fri, 9am–6pm PKT\n\n" +
-                "Common issues:\n" +
-                "• Bid not showing — refresh the job page\n" +
-                "• Payment failed — try a different method\n" +
-                "• Can't find contractor — try adjusting filters\n" +
-                "• Chat not loading — check internet connection"));
+        btnHelp.setOnClickListener(v -> showInfoDialog(
+                "Help & Support",
+                "We're here to help",
+                R.drawable.ic_help,
+                "NEED HELP? CONTACT US\n\n" +
+                "📧   support@thaika.co\n\n" +
+                "📞   +92-300-THAIKA\n\n" +
+                "⏰   Mon–Fri, 9am–6pm PKT\n\n\n" +
+                "COMMON ISSUES\n\n" +
+                "•  Bid not showing — refresh the job page\n\n" +
+                "•  Payment failed — try a different method\n\n" +
+                "•  Can't find contractor — try adjusting filters\n\n" +
+                "•  Chat not loading — check internet connection"));
 
         switchPushNotif.setOnCheckedChangeListener((btn, checked) -> {
             if (!loadingPrefs) saveNotifPref("pushNotifications", checked);
@@ -212,12 +225,31 @@ public class SettingsActivity extends AppCompatActivity {
         UserManager.getInstance().updateField(currentUserId, field, value);
     }
 
-    private void showInfoDialog(String title, String message) {
-        new AlertDialog.Builder(this)
-                .setTitle(title)
-                .setMessage(message)
-                .setPositiveButton("OK", null)
-                .show();
+    /**
+     * Read-only info dialog used by Privacy Policy, Terms and Conditions and Help & Support.
+     * Uses the custom dialog_info layout - icon badge, subtitle and a scrollable body - instead
+     * of a bare AlertDialog, whose plain title/message rendering looked unstyled next to the
+     * rest of the app.
+     */
+    private void showInfoDialog(String title, String subtitle, int iconRes, String message) {
+        View content = getLayoutInflater().inflate(R.layout.dialog_info, null);
+
+        ((ImageView) content.findViewById(R.id.ivInfoIcon)).setImageResource(iconRes);
+        ((TextView) content.findViewById(R.id.tvInfoTitle)).setText(title);
+        ((TextView) content.findViewById(R.id.tvInfoSubtitle)).setText(subtitle);
+        ((TextView) content.findViewById(R.id.tvInfoMessage)).setText(message);
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(content)
+                .create();
+
+        // Without this the platform draws its own square white background behind our rounded card.
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
+
+        content.findViewById(R.id.btnInfoDismiss).setOnClickListener(v -> dialog.dismiss());
+        dialog.show();
     }
 
     @Override

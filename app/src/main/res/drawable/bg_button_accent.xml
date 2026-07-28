@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Filled button in the app's accent purple. bg_button_purple.xml is a #8E24AA gradient that
+  predates the #7C4DFF accent used everywhere else, so this is the flat accent version.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#7C4DFF" />
+    <corners android:radius="12dp" />
+</shape>
