@@ -18,6 +18,7 @@ import com.example.madproject.adapters.JobAdapter;
 import com.example.madproject.firebase.JobManager;
 import com.example.madproject.firebase.UserManager;
 import com.example.madproject.helpers.FCMHelper;
+import com.example.madproject.helpers.NameFormatter;
 import com.example.madproject.models.Job;
 import com.example.madproject.models.User;
 import com.example.madproject.views.ShimmerLayout;
@@ -35,7 +36,7 @@ public class ClientDashboardActivity extends AppCompatActivity {
     private static final String TAG = "ClientDashboard";
 
     private TextView tvWelcome, tvUserName, tvViewAllJobs;
-    private ShimmerLayout shimmerWelcome;
+    private ShimmerLayout shimmerWelcome, shimmerJobs;
     private RecyclerView rvMyJobs;
     private LinearLayout emptyState;
     private CardView btnPostJob, cardFindContractors;
@@ -84,6 +85,9 @@ public class ClientDashboardActivity extends AppCompatActivity {
         // Refresh jobs when returning to dashboard
         Log.d(TAG, "onResume - Refreshing jobs");
         loadUserJobs();
+
+        // Guard: this screen is always Home, so the nav must always show Home.
+        bottomNavigation.setSelectedItemId(R.id.nav_home);
     }
 
     private void initViews() {
@@ -97,6 +101,7 @@ public class ClientDashboardActivity extends AppCompatActivity {
         bottomNavigation = findViewById(R.id.bottomNavigation);
         fabAIChat = findViewById(R.id.fabAIChat);
         shimmerWelcome = findViewById(R.id.shimmerWelcome);
+        shimmerJobs = findViewById(R.id.shimmerJobs);
 
         // Create ProgressBar programmatically if not in XML
         progressBar = new ProgressBar(this);
@@ -153,6 +158,13 @@ public class ClientDashboardActivity extends AppCompatActivity {
         });
 
         // Bottom Navigation
+        //
+        // Every branch that launches another Activity returns FALSE on purpose. This screen is
+        // Home, so Home must stay the highlighted tab. Returning true would tell the
+        // BottomNavigationView to move the highlight onto the tapped tab, and since these tabs
+        // open a new Activity on top (no finish(), no intent flags), backing out would land here
+        // with e.g. "My Jobs" still lit. Returning false runs the action without moving the
+        // highlight, so there is no stale selection to come back to.
         bottomNavigation.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
 
@@ -161,17 +173,17 @@ public class ClientDashboardActivity extends AppCompatActivity {
             }
             else if (id == R.id.nav_my_jobs) {
                 startActivity(new Intent(ClientDashboardActivity.this, MyJobsActivity.class));
-                return true;
+                return false;
             }
             else if (id == R.id.nav_find) {
                 startActivity(new Intent(ClientDashboardActivity.this, ContractorDirectoryActivity.class));
-                return true;
+                return false;
             } else if (id == R.id.nav_messages) {
                 startActivity(new Intent(ClientDashboardActivity.this, ConversationsListActivity.class));
-                return true;
+                return false;
             } else if (id == R.id.nav_profile) {
                 startActivity(new Intent(ClientDashboardActivity.this, SettingsActivity.class));
-                return true;
+                return false;
             }
 
             return false;
@@ -213,7 +225,7 @@ public class ClientDashboardActivity extends AppCompatActivity {
     private void updateUI(User user) {
         if (user != null) {
             // Update user name
-            tvUserName.setText(user.getFullName());
+            tvUserName.setText(NameFormatter.capitalize(user.getFullName()));
 
             // Update welcome message based on time
             tvWelcome.setText(getGreeting());
@@ -248,6 +260,11 @@ public class ClientDashboardActivity extends AppCompatActivity {
     private void loadUserJobs() {
         if (currentUserId.isEmpty()) {
             Log.e(TAG, "Cannot load jobs - User ID is empty");
+            // The skeleton starts visible, so this early return has to clear it too or the
+            // list shimmers forever.
+            showLoading(false);
+            rvMyJobs.setVisibility(View.GONE);
+            emptyState.setVisibility(View.VISIBLE);
             return;
         }
 
@@ -295,6 +312,10 @@ public class ClientDashboardActivity extends AppCompatActivity {
                 })
                 .addOnFailureListener(e -> {
                     showLoading(false);
+                    // Resolve the screen on the error path too, otherwise the skeleton goes away
+                    // and leaves nothing behind it.
+                    rvMyJobs.setVisibility(View.GONE);
+                    emptyState.setVisibility(View.VISIBLE);
                     Log.e(TAG, "Error loading jobs: " + e.getMessage(), e);
                     Toast.makeText(ClientDashboardActivity.this,
                             "Error loading jobs: " + e.getMessage(),
@@ -302,14 +323,16 @@ public class ClientDashboardActivity extends AppCompatActivity {
                 });
     }
 
+    /** Drives the jobs-list skeleton. The welcome card has its own shimmer. */
     private void showLoading(boolean show) {
         if (show) {
-            Log.d(TAG, "Showing loading state");
+            shimmerJobs.setVisibility(View.VISIBLE);
+            shimmerJobs.showShimmer();
             rvMyJobs.setVisibility(View.GONE);
             emptyState.setVisibility(View.GONE);
-            // Show progress indicator
         } else {
-            Log.d(TAG, "Hiding loading state");
+            shimmerJobs.hideShimmer();
+            shimmerJobs.setVisibility(View.GONE);
         }
     }
 

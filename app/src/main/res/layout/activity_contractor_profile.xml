@@ -30,16 +30,6 @@
                 android:textColor="#212121" />
 
             <ImageView
-                android:id="@+id/btnShare"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:layout_gravity="end"
-                android:layout_marginEnd="48dp"
-                android:padding="4dp"
-                android:src="@drawable/ic_share"
-                android:contentDescription="Share" />
-
-            <ImageView
                 android:id="@+id/btnFavorite"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
@@ -63,6 +53,11 @@
                 android:layout_margin="16dp"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="2dp">
+
+                <com.example.madproject.views.ShimmerLayout
+                    android:id="@+id/shimmerProfileHeader"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
 
                 <androidx.constraintlayout.widget.ConstraintLayout
                     android:layout_width="match_parent"
@@ -94,7 +89,10 @@
                         android:id="@+id/tvName"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Ahmad Ali"
+                        android:background="@drawable/bg_skeleton"
+                        android:minWidth="180dp"
+                        android:minHeight="28dp"
+                        tools:text="Ahmad Ali"
                         android:textSize="22sp"
                         android:textStyle="bold"
                         android:textColor="#212121"
@@ -108,7 +106,10 @@
                         android:id="@+id/tvCategory"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Professional Electrician"
+                        android:background="@drawable/bg_skeleton"
+                        android:minWidth="140dp"
+                        android:minHeight="20dp"
+                        tools:text="Professional Electrician"
                         android:textSize="15sp"
                         android:textColor="#7C4DFF"
                         android:layout_marginTop="4dp"
@@ -138,7 +139,10 @@
                             android:id="@+id/tvRating"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="4.8"
+                            android:background="@drawable/bg_skeleton"
+                            android:minWidth="36dp"
+                            android:minHeight="20dp"
+                            tools:text="4.8"
                             android:textSize="16sp"
                             android:textStyle="bold"
                             android:textColor="#212121"
@@ -148,7 +152,10 @@
                             android:id="@+id/tvTotalReviews"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="(24 reviews)"
+                            android:background="@drawable/bg_skeleton"
+                            android:minWidth="84dp"
+                            android:minHeight="18dp"
+                            tools:text="(24 reviews)"
                             android:textSize="14sp"
                             android:textColor="#757575"
                             android:layout_marginStart="4dp" />
@@ -177,7 +184,10 @@
                                 android:id="@+id/tvCompletedProjects"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="15"
+                                android:background="@drawable/bg_skeleton"
+                                android:minWidth="44dp"
+                                android:minHeight="24dp"
+                                tools:text="15"
                                 android:textSize="20sp"
                                 android:textStyle="bold"
                                 android:textColor="#7C4DFF" />
@@ -203,7 +213,10 @@
                                 android:id="@+id/tvExperience"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="5"
+                                android:background="@drawable/bg_skeleton"
+                                android:minWidth="44dp"
+                                android:minHeight="24dp"
+                                tools:text="5"
                                 android:textSize="20sp"
                                 android:textStyle="bold"
                                 android:textColor="#4CAF50" />
@@ -229,7 +242,7 @@
                                 android:id="@+id/tvResponseTime"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="2h"
+                                tools:text="2h"
                                 android:textSize="20sp"
                                 android:textStyle="bold"
                                 android:textColor="#FFA726" />
@@ -245,6 +258,8 @@
                     </LinearLayout>
 
                 </androidx.constraintlayout.widget.ConstraintLayout>
+
+                </com.example.madproject.views.ShimmerLayout>
             </androidx.cardview.widget.CardView>
 
             <!-- Contact Buttons -->
@@ -296,6 +311,11 @@
                 app:cardCornerRadius="12dp"
                 app:cardElevation="2dp">
 
+                <com.example.madproject.views.ShimmerLayout
+                    android:id="@+id/shimmerAbout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -315,7 +335,9 @@
                         android:id="@+id/tvBio"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Professional electrician with 5+ years of experience in residential and commercial electrical work. Specialized in wiring, circuit breaker installation, and electrical troubleshooting."
+                        android:background="@drawable/bg_skeleton"
+                        android:minHeight="56dp"
+                        tools:text="Professional electrician with 5+ years of experience in residential and commercial electrical work. Specialized in wiring, circuit breaker installation, and electrical troubleshooting."
                         android:textSize="14sp"
                         android:textColor="#757575"
                         android:lineSpacingExtra="4dp" />
@@ -338,7 +360,10 @@
                             android:id="@+id/tvLocation"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="DHA Phase 5, Lahore"
+                            android:background="@drawable/bg_skeleton"
+                            android:minWidth="150dp"
+                            android:minHeight="18dp"
+                            tools:text="DHA Phase 5, Lahore"
                             android:textSize="14sp"
                             android:textColor="#212121"
                             android:layout_marginStart="8dp" />
@@ -362,12 +387,17 @@
                             android:id="@+id/tvHourlyRate"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Rs. 1,500/day"
+                            android:background="@drawable/bg_skeleton"
+                            android:minWidth="110dp"
+                            android:minHeight="18dp"
+                            tools:text="Rs. 1,500/day"
                             android:textSize="14sp"
                             android:textColor="#212121"
                             android:layout_marginStart="8dp" />
                     </LinearLayout>
                 </LinearLayout>
+
+                </com.example.madproject.views.ShimmerLayout>
             </androidx.cardview.widget.CardView>
 
             <!-- Portfolio Section -->
@@ -378,6 +408,7 @@
                 android:layout_marginStart="16dp"
                 android:layout_marginEnd="16dp"
                 android:layout_marginBottom="16dp"
+                android:visibility="gone"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="2dp">
 
@@ -431,6 +462,7 @@
                 android:layout_marginStart="16dp"
                 android:layout_marginEnd="16dp"
                 android:layout_marginBottom="24dp"
+                android:visibility="gone"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="2dp">
 

@@ -16,14 +16,14 @@ public class EmailHelper {
 
     public static Task<Void> sendContractEmail(String toEmail, String jobTitle, String pdfUrl) {
         Map<String, Object> message = new HashMap<>();
-        message.put("subject", "Your RebuildPak Contract: " + jobTitle);
+        message.put("subject", "Your Thaika.co Contract: " + jobTitle);
         message.put("html",
                 "<p>Hi,</p>"
                         + "<p>Your construction contract for <b>" + jobTitle + "</b> has been generated.</p>"
                         + "<p><a href=\"" + pdfUrl + "\">Download Contract PDF</a></p>"
                         + "<p>Note: this is an AI-generated template. Please review carefully and consult a "
                         + "legal professional before treating it as binding.</p>"
-                        + "<p>— RebuildPak</p>");
+                        + "<p>— Thaika.co</p>");
 
         Map<String, Object> mailDoc = new HashMap<>();
         mailDoc.put("to", Arrays.asList(toEmail));

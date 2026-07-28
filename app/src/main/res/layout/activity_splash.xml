@@ -11,13 +11,16 @@
         android:layout_height="match_parent"
         android:background="#807C4DFF" />
 
-    <!-- Logo -->
-    <ImageView
+    <!-- Logo. The brand PNG has no alpha channel (purple artwork on a white field), so it is
+         circle-cropped rather than dropped straight onto the purple background as a white square.
+         The source asset is pre-padded, so the crop does not clip the swoosh. -->
+    <de.hdodenhof.circleimageview.CircleImageView
         android:id="@+id/ivLogo"
-        android:layout_width="120dp"
-        android:layout_height="120dp"
-        android:src="@drawable/ic_work"
-        app:tint="@android:color/white"
+        android:layout_width="140dp"
+        android:layout_height="140dp"
+        android:src="@drawable/ic_logo"
+        app:civ_border_width="3dp"
+        app:civ_border_color="@android:color/white"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"

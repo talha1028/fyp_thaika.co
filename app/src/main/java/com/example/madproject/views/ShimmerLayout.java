@@ -73,7 +73,18 @@ public class ShimmerLayout extends FrameLayout {
         animator.start();
     }
 
-    /** Stop the sweep permanently and draw children as-is. Safe to call more than once. */
+    /**
+     * Restart the sweep after {@link #hideShimmer()}. Pairs with making the view visible again.
+     *
+     * List screens reload (pull back onto them, change a filter), so unlike the dashboards they
+     * need to shimmer more than once per instance.
+     */
+    public void showShimmer() {
+        shimmering = true;
+        startShimmer();
+    }
+
+    /** Stop the sweep and draw children as-is. Safe to call more than once. */
     public void hideShimmer() {
         shimmering = false;
         stopAnimator();

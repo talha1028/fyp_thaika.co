@@ -21,7 +21,7 @@ public class GeminiAIHelper {
     private static final String TAG = "GeminiAI";
 
     private static final String SYSTEM_CONTEXT =
-            "You are an AI assistant for RebuildPak, a construction marketplace in Pakistan. " +
+            "You are an AI assistant for Thaika.co, a construction marketplace in Pakistan. " +
             "Help with: cost estimates (PKR), timelines, materials, safety, contractor advice, job descriptions. " +
             "Be concise (2-3 paragraphs max), use simple language, always use PKR for costs, " +
             "consider Pakistani standards and local material prices.";

@@ -48,6 +48,33 @@
             android:inputType="text" />
     </androidx.cardview.widget.CardView>
 
+    <!-- Loading skeleton. Visible by default so it paints on the very first frame, before any
+         Java runs - otherwise the screen flashes something else first. -->
+    <com.example.madproject.views.ShimmerLayout
+        android:id="@+id/shimmerConversations"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="8dp"
+        app:layout_constraintTop_toBottomOf="@id/searchCard"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <include layout="@layout/item_conversation_skeleton" />
+            <include layout="@layout/item_conversation_skeleton" />
+            <include layout="@layout/item_conversation_skeleton" />
+            <include layout="@layout/item_conversation_skeleton" />
+            <include layout="@layout/item_conversation_skeleton" />
+        </LinearLayout>
+    </com.example.madproject.views.ShimmerLayout>
+
     <!-- Conversations RecyclerView -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvConversations"
@@ -55,6 +82,7 @@
         android:layout_height="0dp"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
+        android:paddingTop="8dp"
         android:clipToPadding="false"
         app:layout_constraintTop_toBottomOf="@id/searchCard"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -95,16 +123,5 @@
             android:gravity="center"
             android:layout_marginTop="8dp" />
     </LinearLayout>
-
-    <!-- Loading Indicator -->
-    <ProgressBar
-        android:id="@+id/progressBar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:visibility="gone"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

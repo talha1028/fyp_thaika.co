@@ -23,8 +23,10 @@ import com.example.madproject.adapters.ReviewAdapter;
 import com.example.madproject.firebase.ReviewManager;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.example.madproject.firebase.UserManager;
+import com.example.madproject.helpers.NameFormatter;
 import com.example.madproject.models.Review;
 import com.example.madproject.models.User;
+import com.example.madproject.views.ShimmerLayout;
 import com.google.firebase.firestore.DocumentSnapshot;
 
 import java.util.ArrayList;
@@ -46,6 +48,7 @@ public class ContractorProfileActivity extends AppCompatActivity {
     private Button btnCall, btnMessage;
     private ProgressBar progressBar;
     private CardView portfolioSection, reviewsSection;
+    private ShimmerLayout shimmerProfileHeader, shimmerAbout;
 
     private String contractorId;
     private User contractor;
@@ -79,7 +82,7 @@ public class ContractorProfileActivity extends AppCompatActivity {
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
-            getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setTitle("");
         }
 
@@ -105,6 +108,8 @@ public class ContractorProfileActivity extends AppCompatActivity {
         progressBar = findViewById(R.id.progressBar);
         portfolioSection = findViewById(R.id.portfolioSection);
         reviewsSection = findViewById(R.id.reviewsSection);
+        shimmerProfileHeader = findViewById(R.id.shimmerProfileHeader);
+        shimmerAbout = findViewById(R.id.shimmerAbout);
 
         rvPortfolio.setLayoutManager(new GridLayoutManager(this, 3));
         rvReviews.setLayoutManager(new LinearLayoutManager(this));
@@ -176,6 +181,28 @@ public class ContractorProfileActivity extends AppCompatActivity {
         }
     }
 
+    /** Drop the grey placeholder bars once a field has its real value. */
+    private void clearSkeleton(TextView... views) {
+        for (TextView v : views) {
+            if (v == null) continue;
+            v.setBackground(null);
+            v.setMinWidth(0);
+            v.setMinHeight(0);
+        }
+    }
+
+    /**
+     * Stop both skeletons. Run this on every terminal branch - several of these fields are set
+     * conditionally (a contractor with no bio, no rate, no city), so clearing has to be
+     * unconditional or an unset field keeps its grey bar forever.
+     */
+    private void finishProfileSkeleton() {
+        clearSkeleton(tvName, tvCategory, tvRating, tvTotalReviews, tvCompletedProjects,
+                tvExperience, tvBio, tvLocation, tvHourlyRate);
+        shimmerProfileHeader.hideShimmer();
+        shimmerAbout.hideShimmer();
+    }
+
     private void loadProfile() {
         showLoading(true);
 
@@ -191,6 +218,8 @@ public class ContractorProfileActivity extends AppCompatActivity {
             @Override
             public void onError(String error) {
                 showLoading(false);
+                // Never leave the skeleton shimmering forever on failure.
+                finishProfileSkeleton();
                 Log.e(TAG, "Error loading profile: " + error);
                 Toast.makeText(ContractorProfileActivity.this,
                         "Error loading profile", Toast.LENGTH_SHORT).show();
@@ -200,6 +229,7 @@ public class ContractorProfileActivity extends AppCompatActivity {
 
     private void displayProfile(User user) {
         if (user == null) {
+            finishProfileSkeleton();
             Toast.makeText(this, "Error: User data is null", Toast.LENGTH_SHORT).show();
             finish();
             return;
@@ -207,7 +237,7 @@ public class ContractorProfileActivity extends AppCompatActivity {
 
         // Set name
         if (tvName != null && user.getFullName() != null) {
-            tvName.setText(user.getFullName());
+            tvName.setText(NameFormatter.capitalize(user.getFullName()));
         }
 
         // Set category
@@ -296,6 +326,8 @@ public class ContractorProfileActivity extends AppCompatActivity {
                 .error(R.drawable.ic_default_profile)
                 .circleCrop()
                 .into(ivProfileImage);
+
+        finishProfileSkeleton();
     }
 
     private void loadReviews() {

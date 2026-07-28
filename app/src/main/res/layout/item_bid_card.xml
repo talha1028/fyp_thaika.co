@@ -192,12 +192,16 @@
             app:layout_constraintStart_toStartOf="parent" />
 
         <!-- Action Buttons -->
+        <!-- No android:weightSum here on purpose. BidAdapter hides Accept/Reject once a bid is no
+             longer pending, and a hardcoded weightSum="4" would still hand the two surviving
+             buttons only a quarter of the row each - squeezing "Profile" until it wrapped and got
+             clipped by the fixed 42dp height. Letting LinearLayout sum the visible children's
+             weights gives 50% each when two are shown and 25% each when all four are. -->
         <LinearLayout
             android:id="@+id/layoutButtons"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:weightSum="4"
             android:layout_marginTop="12dp"
             app:layout_constraintTop_toBottomOf="@id/tvSubmittedDate">
 
@@ -209,6 +213,10 @@
                 android:layout_weight="1"
                 android:text="Accept"
                 android:textAllCaps="false"
+                android:maxLines="1"
+                android:minWidth="0dp"
+                android:paddingStart="2dp"
+                android:paddingEnd="2dp"
                 android:textSize="13sp"
                 android:textColor="@android:color/white"
                 android:background="@drawable/bg_button_green"
@@ -222,6 +230,10 @@
                 android:layout_weight="1"
                 android:text="Reject"
                 android:textAllCaps="false"
+                android:maxLines="1"
+                android:minWidth="0dp"
+                android:paddingStart="2dp"
+                android:paddingEnd="2dp"
                 android:textSize="13sp"
                 android:textColor="@android:color/white"
                 android:background="@drawable/bg_button_red"
@@ -236,6 +248,10 @@
                 android:layout_weight="1"
                 android:text="Profile"
                 android:textAllCaps="false"
+                android:maxLines="1"
+                android:minWidth="0dp"
+                android:paddingStart="2dp"
+                android:paddingEnd="2dp"
                 android:textSize="13sp"
                 android:textColor="#7C4DFF"
                 android:background="@drawable/bg_button_outline"
@@ -250,6 +266,10 @@
                 android:layout_weight="1"
                 android:text="Chat"
                 android:textAllCaps="false"
+                android:maxLines="1"
+                android:minWidth="0dp"
+                android:paddingStart="2dp"
+                android:paddingEnd="2dp"
                 android:textSize="13sp"
                 android:textColor="#7C4DFF"
                 android:background="@drawable/bg_button_outline"

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Round placeholder for avatar slots; bg_skeleton is a 4dp-corner rectangle and reads wrong there -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="#E0E0E0" />
+</shape>

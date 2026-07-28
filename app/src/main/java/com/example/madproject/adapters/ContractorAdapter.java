@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.example.madproject.R;
+import com.example.madproject.helpers.NameFormatter;
 import com.example.madproject.models.User;
 
 import java.util.List;
@@ -46,7 +47,7 @@ public class ContractorAdapter extends RecyclerView.Adapter<ContractorAdapter.Co
         User contractor = contractorList.get(position);
 
         // Set contractor name
-        holder.tvContractorName.setText(contractor.getFullName());
+        holder.tvContractorName.setText(NameFormatter.capitalize(contractor.getFullName()));
 
         // Set category
         if (contractor.getCategory() != null) {

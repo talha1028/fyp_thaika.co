@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Loading placeholder for the activity_edit_profile form. Mirrors the 120dp avatar and the
+  label + field rhythm of the real form (56dp fields, 120dp bio box) so the page does not jump
+  when the profile is prefilled. No ids - it is inert and lives inside a ShimmerLayout.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <!-- Profile picture -->
+    <View
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="24dp"
+        android:background="@drawable/bg_skeleton_circle" />
+
+    <!-- Full Name -->
+    <View
+        android:layout_width="96dp"
+        android:layout_height="14dp"
+        android:background="@drawable/bg_skeleton" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/bg_skeleton" />
+
+    <!-- Email -->
+    <View
+        android:layout_width="60dp"
+        android:layout_height="14dp"
+        android:background="@drawable/bg_skeleton" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/bg_skeleton" />
+
+    <!-- Phone (label row carries the Verify badge in the real form) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <View
+            android:layout_width="112dp"
+            android:layout_height="14dp"
+            android:background="@drawable/bg_skeleton" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <View
+            android:layout_width="56dp"
+            android:layout_height="20dp"
+            android:background="@drawable/bg_skeleton" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/bg_skeleton" />
+
+    <!-- City -->
+    <View
+        android:layout_width="44dp"
+        android:layout_height="14dp"
+        android:background="@drawable/bg_skeleton" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/bg_skeleton" />
+
+    <!-- Address -->
+    <View
+        android:layout_width="76dp"
+        android:layout_height="14dp"
+        android:background="@drawable/bg_skeleton" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/bg_skeleton" />
+
+    <!-- Bio -->
+    <View
+        android:layout_width="130dp"
+        android:layout_height="14dp"
+        android:background="@drawable/bg_skeleton" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="120dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/bg_skeleton" />
+
+    <!-- Category -->
+    <View
+        android:layout_width="70dp"
+        android:layout_height="14dp"
+        android:background="@drawable/bg_skeleton" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/bg_skeleton" />
+
+    <!-- Years of Experience -->
+    <View
+        android:layout_width="150dp"
+        android:layout_height="14dp"
+        android:background="@drawable/bg_skeleton" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/bg_skeleton" />
+
+    <!-- Hourly Rate -->
+    <View
+        android:layout_width="140dp"
+        android:layout_height="14dp"
+        android:background="@drawable/bg_skeleton" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="24dp"
+        android:background="@drawable/bg_skeleton" />
+
+    <!-- Save / Cancel -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="@drawable/bg_skeleton" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/bg_skeleton" />
+</LinearLayout>

@@ -5,7 +5,6 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -16,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.madproject.adapters.JobAdapter;
 import com.example.madproject.firebase.JobManager;
 import com.example.madproject.models.Job;
+import com.example.madproject.views.ShimmerLayout;
 import com.google.android.material.tabs.TabLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -32,7 +32,10 @@ public class MyProjectsActivity extends AppCompatActivity {
     private TabLayout tabLayout;
     private RecyclerView rvProjects;
     private LinearLayout emptyState;
-    private ProgressBar progressBar;
+    private ShimmerLayout shimmerProjects;
+
+    /** True while a fetch is in flight - the skeleton owns the screen until it resolves. */
+    private boolean isLoading = true;
 
     private FirebaseAuth mAuth;
     private String currentUserId;
@@ -64,13 +67,13 @@ public class MyProjectsActivity extends AppCompatActivity {
         tabLayout = findViewById(R.id.tabLayout);
         rvProjects = findViewById(R.id.rvProjects);
         emptyState = findViewById(R.id.emptyState);
-        progressBar = findViewById(R.id.progressBar);
+        shimmerProjects = findViewById(R.id.shimmerProjects);
     }
 
     private void setupToolbar() {
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
-            getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setTitle("My Projects");
         }
     }
@@ -154,6 +157,9 @@ public class MyProjectsActivity extends AppCompatActivity {
                 })
                 .addOnFailureListener(e -> {
                     showLoading(false);
+                    // Resolve the screen on the error path too, otherwise the skeleton goes away
+                    // and leaves nothing behind it.
+                    filterProjects();
                     Log.e(TAG, "Error loading projects: " + e.getMessage());
                     Toast.makeText(this, "Error loading projects: " + e.getMessage(),
                             Toast.LENGTH_SHORT).show();
@@ -173,6 +179,12 @@ public class MyProjectsActivity extends AppCompatActivity {
 
         jobAdapter.notifyDataSetChanged();
 
+        if (isLoading) {
+            // The skeleton owns the screen until the fetch resolves; an empty list here just
+            // means the data has not arrived yet, not that there is nothing to show.
+            return;
+        }
+
         // Show/hide empty state
         if (filteredProjectsList.isEmpty()) {
             rvProjects.setVisibility(View.GONE);
@@ -186,12 +198,15 @@ public class MyProjectsActivity extends AppCompatActivity {
     }
 
     private void showLoading(boolean show) {
+        isLoading = show;
         if (show) {
-            progressBar.setVisibility(View.VISIBLE);
+            shimmerProjects.setVisibility(View.VISIBLE);
+            shimmerProjects.showShimmer();
             rvProjects.setVisibility(View.GONE);
             emptyState.setVisibility(View.GONE);
         } else {
-            progressBar.setVisibility(View.GONE);
+            shimmerProjects.hideShimmer();
+            shimmerProjects.setVisibility(View.GONE);
         }
     }
 

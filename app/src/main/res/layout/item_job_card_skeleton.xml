@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Loading placeholder for item_job_card.xml. Mirrors that card's shell and bar positions so the
+  list does not jump when real data swaps in. Deliberately has no ids and is not clickable - it is
+  inert and gets <include>d several times inside a ShimmerLayout.
+-->
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="12dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="2dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Title + status badge -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="18dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="16dp"
+                android:background="@drawable/bg_skeleton" />
+
+            <View
+                android:layout_width="48dp"
+                android:layout_height="14dp"
+                android:background="@drawable/bg_skeleton" />
+        </LinearLayout>
+
+        <!-- Category chip -->
+        <View
+            android:layout_width="96dp"
+            android:layout_height="24dp"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/bg_skeleton" />
+
+        <!-- Budget + bid count -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="12dp">
+
+            <View
+                android:layout_width="110dp"
+                android:layout_height="16dp"
+                android:background="@drawable/bg_skeleton" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <View
+                android:layout_width="64dp"
+                android:layout_height="16dp"
+                android:background="@drawable/bg_skeleton" />
+        </LinearLayout>
+
+        <!-- Location -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="16dp"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/bg_skeleton" />
+
+        <!-- Posted date -->
+        <View
+            android:layout_width="80dp"
+            android:layout_height="14dp"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/bg_skeleton" />
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

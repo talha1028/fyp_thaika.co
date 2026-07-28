@@ -15,6 +15,7 @@ import androidx.appcompat.widget.Toolbar;
 
 import com.example.madproject.firebase.JobManager;
 import com.example.madproject.models.Job;
+import com.example.madproject.views.ShimmerLayout;
 import com.google.firebase.auth.FirebaseAuth;
 
 public class JobEditActivity extends AppCompatActivity {
@@ -23,6 +24,8 @@ public class JobEditActivity extends AppCompatActivity {
     private Spinner spinnerCategory, spinnerCity;
     private Button btnSaveJob, btnCancel;
     private ProgressBar progressBar;
+    private ShimmerLayout shimmerForm;
+    private View formContent;
 
     private String currentUserId;
     private String jobId;
@@ -84,6 +87,8 @@ public class JobEditActivity extends AppCompatActivity {
         spinnerCity = findViewById(R.id.spinnerCity);
         btnSaveJob = findViewById(R.id.btnSaveJob);
         btnCancel = findViewById(R.id.btnCancel);
+        shimmerForm = findViewById(R.id.shimmerForm);
+        formContent = findViewById(R.id.formContent);
         progressBar = new ProgressBar(this);
         progressBar.setVisibility(View.GONE);
 
@@ -103,7 +108,24 @@ public class JobEditActivity extends AppCompatActivity {
         spinnerCity.setAdapter(cityAdapter);
     }
 
+    /**
+     * Swap between the skeleton and the real form. The form starts gone so an edit screen never
+     * shows empty hinted fields before the job it is editing has been fetched.
+     */
+    private void showFormSkeleton(boolean show) {
+        if (show) {
+            shimmerForm.setVisibility(View.VISIBLE);
+            shimmerForm.showShimmer();
+            formContent.setVisibility(View.GONE);
+        } else {
+            shimmerForm.hideShimmer();
+            shimmerForm.setVisibility(View.GONE);
+            formContent.setVisibility(View.VISIBLE);
+        }
+    }
+
     private void loadJob() {
+        showFormSkeleton(true);
         setFieldsEnabled(false);
         btnSaveJob.setText("Loading...");
 
@@ -130,6 +152,7 @@ public class JobEditActivity extends AppCompatActivity {
                     }
 
                     populateFields(currentJob);
+                    showFormSkeleton(false);
                     setFieldsEnabled(true);
                     btnSaveJob.setText("Save Changes");
                 })
