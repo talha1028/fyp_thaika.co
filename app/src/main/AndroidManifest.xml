@@ -49,6 +49,8 @@
             android:name=".SignupActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
+     
+
 
         <!-- Dashboard Activities -->
         <activity
