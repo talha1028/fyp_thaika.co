@@ -1,0 +1,37 @@
+graph ERD {
+  graph [layout=neato, mode=KK, overlap=prism, splines=line, sep="+0.4", esep="+0.2", maxiter=8000, epsilon=0.0001, labelloc="t", fontname="Arial Bold", fontsize=18, label="Part 5 of 6 - Chat Messaging", bgcolor="white"];
+  node [fontname="Arial", fontsize=12, penwidth=1.4];
+  edge [fontname="Arial", fontsize=11, color="#000000", penwidth=1.1];
+  n_e_message [label="Message", shape="box", style="filled", fillcolor="#D9D9D9", color="#000000", fontcolor="#000000", margin="0.18,0.12", fontsize="16"];
+  n_a_message_messageid [label=<<u>messageId</u>>, shape="ellipse", style="filled", fillcolor="#FFFFFF", color="#000000", fontcolor="#000000", margin="0.04,0.02", fontsize="11"];
+  n_e_message -- n_a_message_messageid [len=0.38, weight=40];
+  n_a_message_chatid [label="chatId", shape="ellipse", style="filled", fillcolor="#FFFFFF", color="#000000", fontcolor="#000000", margin="0.04,0.02", fontsize="11"];
+  n_e_message -- n_a_message_chatid [len=0.38, weight=40];
+  n_a_message_senderid_fk [label="senderId (FK)", shape="ellipse", style="filled", fillcolor="#FFFFFF", color="#000000", fontcolor="#000000", margin="0.04,0.02", fontsize="11"];
+  n_e_message -- n_a_message_senderid_fk [len=0.38, weight=40];
+  n_a_message_receiverid_fk [label="receiverId (FK)", shape="ellipse", style="filled", fillcolor="#FFFFFF", color="#000000", fontcolor="#000000", margin="0.04,0.02", fontsize="11"];
+  n_e_message -- n_a_message_receiverid_fk [len=0.38, weight=40];
+  n_a_message_messagetext [label="messageText", shape="ellipse", style="filled", fillcolor="#FFFFFF", color="#000000", fontcolor="#000000", margin="0.04,0.02", fontsize="11"];
+  n_e_message -- n_a_message_messagetext [len=0.38, weight=40];
+  n_a_message_messagetype [label="messageType", shape="ellipse", style="filled", fillcolor="#FFFFFF", color="#000000", fontcolor="#000000", margin="0.04,0.02", fontsize="11"];
+  n_e_message -- n_a_message_messagetype [len=0.38, weight=40];
+  n_a_message_attachmenturl [label="attachmentUrl", shape="ellipse", style="filled", fillcolor="#FFFFFF", color="#000000", fontcolor="#000000", margin="0.04,0.02", fontsize="11"];
+  n_e_message -- n_a_message_attachmenturl [len=0.38, weight=40];
+  n_a_message_isread [label="isRead", shape="ellipse", style="filled", fillcolor="#FFFFFF", color="#000000", fontcolor="#000000", margin="0.04,0.02", fontsize="11"];
+  n_e_message -- n_a_message_isread [len=0.38, weight=40];
+  n_e_user [label="User", shape="box", style="filled", fillcolor="#D9D9D9", color="#000000", fontcolor="#000000", margin="0.18,0.12", fontsize="16"];
+  n_a_user_userid [label=<<u>userId</u>>, shape="ellipse", style="filled", fillcolor="#FFFFFF", color="#000000", fontcolor="#000000", margin="0.04,0.02", fontsize="11"];
+  n_e_user -- n_a_user_userid [len=0.38, weight=40];
+  n_a_user_fullname [label="fullName", shape="ellipse", style="filled", fillcolor="#FFFFFF", color="#000000", fontcolor="#000000", margin="0.04,0.02", fontsize="11"];
+  n_e_user -- n_a_user_fullname [len=0.38, weight=40];
+  n_r_0_sends [label="sends", shape="diamond", style="filled", fillcolor="#D9D9D9", color="#000000", fontcolor="#000000", margin="0.05,0.02", fontsize="12"];
+  n_e_user -- n_r_0_sends [label="1", len=1.55, weight=2, penwidth=1.4];
+  n_r_0_sends -- n_e_message [label="N", len=1.55, weight=2, penwidth=1.4];
+  n_r_1_receives [label="receives", shape="diamond", style="filled", fillcolor="#D9D9D9", color="#000000", fontcolor="#000000", margin="0.05,0.02", fontsize="12"];
+  n_e_user -- n_r_1_receives [label="1", len=1.55, weight=2, penwidth=1.4];
+  n_r_1_receives -- n_e_message [label="N", len=1.55, weight=2, penwidth=1.4];
+  n_note_0 [label="-> shown in full in\nPart 1 (Accounts)", shape="box", style="filled", fillcolor="#BDBDBD", color="#000000", fontcolor="#000000", fontsize=10];
+  n_e_user -- n_note_0 [style=invis, len=0.7, weight=8];
+  n_note_1 [label="chatId groups a\nclient-contractor thread", shape="box", style="filled", fillcolor="#BDBDBD", color="#000000", fontcolor="#000000", fontsize=10];
+  n_e_message -- n_note_1 [style=invis, len=0.7, weight=8];
+}

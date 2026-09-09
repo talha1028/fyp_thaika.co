@@ -1,0 +1,45 @@
+@startuml
+title Entity Relationship Diagram - Part 5 of 6 - Chat Messaging
+skinparam dpi 180
+skinparam linetype ortho
+skinparam defaultFontName Arial
+skinparam defaultFontSize 15
+skinparam classFontSize 17
+skinparam classAttributeFontSize 15
+skinparam classHeaderFontSize 17
+skinparam arrowFontSize 14
+skinparam nodesep 50
+skinparam ranksep 55
+hide circle
+
+entity "users" as users {
+  * userId : string <<PK>>
+  --
+  * email : string
+  * userType : string
+  fullName : string
+}
+
+entity "messages" as messages {
+  * messageId : string <<PK>>
+  --
+  * chatId : string
+  * senderId : string <<FK users>>
+  senderName : string
+  senderPhotoUrl : string
+  * receiverId : string <<FK users>>
+  receiverName : string
+  messageText : string
+  * messageType : string
+  attachmentUrl : string
+  attachmentName : string
+  * isRead : boolean
+  readAt : bigint
+  timestamp : bigint
+}
+
+
+users ||--o{ messages : "sends"
+users ||--o{ messages : "receives"
+
+@enduml

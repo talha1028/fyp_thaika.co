@@ -1,0 +1,252 @@
+@startuml
+title Entity Relationship Diagram - Thaika.co (Cloud Firestore)
+skinparam dpi 180
+skinparam linetype ortho
+skinparam defaultFontName Arial
+skinparam defaultFontSize 14
+skinparam classFontSize 16
+skinparam classAttributeFontSize 14
+skinparam classHeaderFontSize 16
+skinparam arrowFontSize 13
+skinparam nodesep 50
+skinparam ranksep 60
+hide circle
+
+entity "users" as users {
+  * userId : string <<PK>>
+  --
+  * email : string <<UNIQUE>>
+  * fullName : string
+  phoneNumber : string
+  address : string
+  city : string
+  * userType : string
+  profilePictureUrl : string
+  fcmToken : string
+  phoneVerified : boolean
+  pushNotificationsEnabled : boolean
+  messageNotificationsEnabled : boolean
+  category : string
+  bio : string
+  experienceYears : int
+  hourlyRate : number
+  rating : number
+  totalReviews : int
+  completedProjects : int
+  totalEarnings : number
+  portfolioImages : array
+  activeJobs : int
+  completedJobs : int
+  totalSpent : number
+  lastLogin : bigint
+  createdAt : bigint
+}
+
+entity "notifications" as notifs {
+  * notificationId : string <<PK>>
+  --
+  * userId : string <<FK users>>
+  * title : string
+  * message : string
+  * type : string
+  relatedId : string
+  relatedData : string
+  iconUrl : string
+  actionUrl : string
+  * isRead : boolean
+  readAt : bigint
+  timestamp : bigint
+}
+
+entity "jobs" as jobs {
+  * jobId : string <<PK>>
+  --
+  * clientId : string <<FK users>>
+  clientName : string
+  clientPhotoUrl : string
+  * title : string
+  description : string
+  * category : string
+  * budget : number
+  timeline : string
+  location : string
+  * status : string
+  postedDate : bigint
+  startDate : bigint
+  completedDate : bigint
+  totalBids : int
+  acceptedBidId : string <<FK bids>>
+  acceptedBidAmount : number
+  assignedContractorId : string <<FK users>>
+  assignedContractorName : string
+  attachments : array
+  depositPaid : boolean
+  finalPaid : boolean
+  paymentVerified : boolean
+}
+
+entity "bids" as bids {
+  * bidId : string <<PK>>
+  --
+  * jobId : string <<FK jobs>>
+  jobTitle : string
+  * contractorId : string <<FK users>>
+  contractorName : string
+  contractorPhotoUrl : string
+  contractorCategory : string
+  contractorRating : number
+  contractorCompletedProjects : int
+  * bidAmount : number
+  * completionDays : int
+  proposal : string
+  * status : string
+  portfolioImages : array
+  submittedDate : bigint
+}
+
+entity "contracts" as contracts {
+  * contractId : string <<PK>>
+  --
+  * jobId : string <<FK jobs>>
+  jobTitle : string
+  * clientId : string <<FK users>>
+  * contractorId : string <<FK users>>
+  contractText : string
+  pdfUrl : string
+  clientEmailSent : boolean
+  contractorEmailSent : boolean
+  generatedDate : bigint
+}
+
+entity "payments" as payments {
+  * paymentId : string <<PK>>
+  --
+  * jobId : string <<FK jobs>>
+  jobTitle : string
+  * clientId : string <<FK users>>
+  * contractorId : string <<FK users>>
+  contractorName : string
+  * amount : number
+  * paymentType : string
+  * paymentMethod : string
+  transactionRef : string
+  * status : string
+  timestamp : bigint
+}
+
+entity "mail" as mail {
+  * id : string <<PK>>
+  --
+  * to : array
+  message.subject : string
+  message.html : string
+}
+
+entity "tasks" as tasks {
+  * taskId : string <<PK>>
+  --
+  * jobId : string <<FK jobs>>
+  projectName : string
+  * taskTitle : string
+  description : string
+  assignedTo : string
+  numberOfWorkers : int
+  startDate : bigint
+  endDate : bigint
+  * status : string
+  progressPercentage : number
+  progressUnit : string
+  estimatedQuantity : number
+  completedQuantity : number
+  dailyWages : number
+  totalCost : number
+  photos : array
+  createdBy : string <<FK users>>
+  createdAt : bigint
+  updatedAt : bigint
+}
+
+entity "materials" as materials {
+  * materialId : string <<PK>>
+  --
+  * jobId : string <<FK jobs>>
+  projectName : string
+  * materialName : string
+  * category : string
+  * quantity : number
+  * unit : string
+  * unitPrice : number
+  totalCost : number
+  supplier : string
+  supplierContact : string
+  description : string
+  * status : string
+  lowStockThreshold : number
+  photos : array
+  addedBy : string <<FK users>>
+  addedDate : bigint
+  lastUpdated : bigint
+}
+
+entity "messages" as messages {
+  * messageId : string <<PK>>
+  --
+  * chatId : string
+  * senderId : string <<FK users>>
+  senderName : string
+  senderPhotoUrl : string
+  * receiverId : string <<FK users>>
+  receiverName : string
+  messageText : string
+  * messageType : string
+  attachmentUrl : string
+  attachmentName : string
+  * isRead : boolean
+  readAt : bigint
+  timestamp : bigint
+}
+
+entity "reviews" as reviews {
+  * reviewId : string <<PK>>
+  --
+  * jobId : string <<FK jobs>>
+  jobTitle : string
+  * clientId : string <<FK users>>
+  clientName : string
+  clientPhotoUrl : string
+  * contractorId : string <<FK users>>
+  contractorName : string
+  * rating : number
+  reviewText : string
+  photos : array
+  isVerified : boolean
+  response : string
+  responseDate : bigint
+  reviewDate : bigint
+}
+
+
+users ||--o{ notifs : "receives"
+users ||--o{ jobs : "posts (client)"
+users ||--o{ jobs : "assigned (contractor)"
+jobs ||--o{ bids : "attracts"
+users ||--o{ bids : "submits"
+jobs |o--o| bids : "accepts"
+jobs ||--o| contracts : "generates"
+users ||--o{ contracts : "client of"
+users ||--o{ contracts : "contractor of"
+jobs ||--o{ payments : "settled by"
+users ||--o{ payments : "pays"
+users ||--o{ payments : "receives"
+contracts ||--o{ mail : "emailed as"
+jobs ||--o{ tasks : "tracks"
+jobs ||--o{ materials : "consumes"
+users ||--o{ tasks : "creates"
+users ||--o{ materials : "adds"
+users ||--o{ messages : "sends"
+users ||--o{ messages : "receives"
+jobs ||--o| reviews : "rated by"
+users ||--o{ reviews : "writes"
+users ||--o{ reviews : "receives"
+
+@enduml

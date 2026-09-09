@@ -1,0 +1,77 @@
+@startuml
+title Entity Relationship Diagram - Part 3 of 6 - Contracts & Payments
+skinparam dpi 180
+skinparam linetype ortho
+skinparam defaultFontName Arial
+skinparam defaultFontSize 15
+skinparam classFontSize 17
+skinparam classAttributeFontSize 15
+skinparam classHeaderFontSize 17
+skinparam arrowFontSize 14
+skinparam nodesep 50
+skinparam ranksep 55
+hide circle
+
+entity "users" as users {
+  * userId : string <<PK>>
+  --
+  * email : string
+  * userType : string
+  fullName : string
+}
+
+entity "jobs" as jobs {
+  * jobId : string <<PK>>
+  --
+  * title : string
+  * status : string
+}
+
+entity "contracts" as contracts {
+  * contractId : string <<PK>>
+  --
+  * jobId : string <<FK jobs>>
+  jobTitle : string
+  * clientId : string <<FK users>>
+  * contractorId : string <<FK users>>
+  contractText : string
+  pdfUrl : string
+  clientEmailSent : boolean
+  contractorEmailSent : boolean
+  generatedDate : bigint
+}
+
+entity "payments" as payments {
+  * paymentId : string <<PK>>
+  --
+  * jobId : string <<FK jobs>>
+  jobTitle : string
+  * clientId : string <<FK users>>
+  * contractorId : string <<FK users>>
+  contractorName : string
+  * amount : number
+  * paymentType : string
+  * paymentMethod : string
+  transactionRef : string
+  * status : string
+  timestamp : bigint
+}
+
+entity "mail" as mail {
+  * id : string <<PK>>
+  --
+  * to : array
+  message.subject : string
+  message.html : string
+}
+
+
+jobs ||--o| contracts : "generates"
+users ||--o{ contracts : "signs (client)"
+users ||--o{ contracts : "signs (contractor)"
+jobs ||--o{ payments : "settled by"
+users ||--o{ payments : "pays (client)"
+users ||--o{ payments : "receives (contractor)"
+contracts ||--o{ mail : "emailed as"
+
+@enduml

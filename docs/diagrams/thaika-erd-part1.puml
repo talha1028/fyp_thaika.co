@@ -1,0 +1,64 @@
+@startuml
+title Entity Relationship Diagram - Part 1 of 6 - Accounts & Notifications
+skinparam dpi 180
+skinparam linetype ortho
+skinparam defaultFontName Arial
+skinparam defaultFontSize 15
+skinparam classFontSize 17
+skinparam classAttributeFontSize 15
+skinparam classHeaderFontSize 17
+skinparam arrowFontSize 14
+skinparam nodesep 50
+skinparam ranksep 55
+hide circle
+
+entity "users" as users {
+  * userId : string <<PK>>
+  --
+  * email : string <<UNIQUE>>
+  * fullName : string
+  phoneNumber : string
+  address : string
+  city : string
+  * userType : string
+  profilePictureUrl : string
+  fcmToken : string
+  phoneVerified : boolean
+  pushNotificationsEnabled : boolean
+  messageNotificationsEnabled : boolean
+  category : string
+  bio : string
+  experienceYears : int
+  hourlyRate : number
+  rating : number
+  totalReviews : int
+  completedProjects : int
+  totalEarnings : number
+  portfolioImages : array
+  activeJobs : int
+  completedJobs : int
+  totalSpent : number
+  lastLogin : bigint
+  createdAt : bigint
+}
+
+entity "notifications" as notifs {
+  * notificationId : string <<PK>>
+  --
+  * userId : string <<FK users>>
+  * title : string
+  * message : string
+  * type : string
+  relatedId : string
+  relatedData : string
+  iconUrl : string
+  actionUrl : string
+  * isRead : boolean
+  readAt : bigint
+  timestamp : bigint
+}
+
+
+users ||--o{ notifs : "receives"
+
+@enduml
